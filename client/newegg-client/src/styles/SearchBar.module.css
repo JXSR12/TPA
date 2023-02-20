@@ -1,0 +1,87 @@
+
+
+.search-form {
+  position: relative;
+  width: 30rem;
+  background: transparent;
+  border-radius: transparent;
+  margin-right: 4em;
+}
+
+.search-form-m {
+  position: relative;
+  width: 80vw;
+  background: rgba(255,255,255,0.3);
+  border-radius: 10px;
+  padding: 1em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  border-radius: transparent;
+}
+
+@media only screen and (max-width: 1024px) {
+  .search-form {
+    display: none;
+  }
+
+  .input{
+    border: 0;
+    color: var(--color-light-text);
+    font-size: 2rem;
+  }
+
+  .button {
+    border: 0;
+    color: var(--color-light-text);
+    font-size: 4rem;
+  }
+}
+
+.input, .button {
+  border: 0;
+  color: var(--color-light-text);
+  font-size: 1.8rem;
+  height: 100%;
+}
+.input[type="search"] {
+  outline: 0;
+  width: 100%;
+  background: transparent;
+  padding: 0 1.6rem;
+  appearance: none;
+  z-index: 1;
+  position: relative;
+}
+.button {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6rem;
+  font-weight: bold;
+  background: var(--color-brand);
+  border-radius: 0 var(--rad) var(--rad) 0;
+  height: 100%;
+  cursor: pointer;
+}
+.button:hover {
+  transition: 0.1s ease-in-out;
+  transform: scale(1.1);
+  border-color: #fff;
+}
+.input:not(:placeholder-shown) {
+  border-radius: var(--rad) 0 0 var(--rad);
+  width: calc(100% - 6rem);
+}
+.input:not(:placeholder-shown) + button {
+  display: block;
+}
+.label {
+  position: absolute;
+  clip: rect(1px, 1px, 1px, 1px);
+  padding: 0;
+  border: 0;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+}

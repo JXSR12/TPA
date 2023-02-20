@@ -1,0 +1,85 @@
+scalar Time
+
+type Product {
+  id: ID!
+  name: String!
+  images: [ProductImage!]! @goField(forceResolver: true)
+  description: String!
+  price: Float!
+  discount: Float!
+  stock: Int!
+  metadata: String!
+  createdAt: Time!
+  validTo: Time
+  group: ProductGroup! @goField(forceResolver: true)
+  brand: ProductBrand! @goField(forceResolver: true)
+
+  category: Category! @goField(forceResolver: true)
+  reviews: [Review!]! @goField(forceResolver: true)
+}
+
+type ProductGroup {
+    id: ID!
+}
+
+type ProductBrand {
+    id: ID!
+    name: String!
+    logo: String!
+}
+
+type ProductImage {
+  id: ID!
+  image: String!
+  product: Product! @goField(forceResolver: true)
+}
+
+type Category {
+  id: ID!
+  name: String!
+  products: [Product!]! @goField(forceResolver: true)
+}
+
+extend type Query {
+  category(id: ID!): Category!
+  categories(limit: Int): [Category!]!
+  product(id: ID!): Product!
+  products(shopID: ID, limit: Int, offset: Int, input: SearchProduct, topSold: Boolean): [Product!]!
+}
+
+extend type Mutation {
+  createProduct(input: NewProduct!, shopID: ID!): Product! @auth
+  createProductVariant(input: NewProduct!, groupID: ID!): Product! @auth
+  createProductImage(image: String!, productID: ID!): ProductImage! @auth
+  createProductImages(images: [String!]!, productID: ID!): Boolean! @auth
+  createBrand(name: String!, logo: String!): ProductBrand! @auth
+  createCategory(name: String!): Category! @auth
+
+  updateProduct(input: NewProduct!, lastUpdateID: ID): Product! @auth
+  deleteProduct(productID: ID!): Product! @auth
+}
+
+input NewProduct {
+  name: String!
+  description: String!
+  price: Float!
+  discount: Float!
+  metadata: String!
+  stock: Int!
+  categoryID: ID!
+  brandID: ID!
+}
+
+input SearchProduct {
+  keyword: String
+  minPrice: Float
+  maxPrice: Float
+  orderBy: String
+  categoryID: String
+  brandID: String
+  groupID: String
+  exceptID: String
+  isDiscount: Boolean
+  createdAtRange: Int
+  highRating: Boolean
+}

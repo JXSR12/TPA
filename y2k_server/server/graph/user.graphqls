@@ -1,0 +1,49 @@
+directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+scalar Any
+
+directive @auth on FIELD_DEFINITION
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+type User{
+  id: ID!
+  name: String!
+  email: String!
+  phone: String!
+  password: String!
+  banned: Boolean!
+  role: UserRole!
+  mailing: Boolean!
+}
+
+
+ input NewUser{
+  name: String!
+  email: String!
+  phone: String!
+  password: String!
+  banned: Boolean!
+  role: UserRole!
+  mailing: Boolean!
+}
+
+
+type AuthOps{
+  login(email: String!, password: String!): Any! @goField(forceResolver: true)
+  register(input: NewUser!): Any! @goField(forceResolver: true)
+}
+
+type Mutation {
+    auth: AuthOps! @goField(forceResolver: true)
+}
+
+
+type Query{
+     user(id: ID!): User! @goField(forceResolver: true) @auth
+     users: [User!]! @goField(forceResolver: true) @auth
+     protected: String! @goField(forceResolver: true) @auth
+}

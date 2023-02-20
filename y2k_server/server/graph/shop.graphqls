@@ -1,0 +1,27 @@
+type Shop {
+  id: ID!
+  name: String!
+  address: String!
+  description: String!
+  profilePic: String!
+
+  user: User! @goField(forceResolver: true)
+  products(keyword: String, topSold: Boolean): [Product!]! @goField(forceResolver: true)
+}
+
+extend type Query {
+  shop(id: ID, keyword: String): Shop!
+  shops: [Shop!]!
+}
+
+extend type Mutation {
+  createShop(input: NewShop!): Shop! @auth
+  updateShop(input: NewShop!): Shop! @auth
+}
+
+input NewShop {
+  name: String!
+  address: String!
+  description: String!
+  profilePic: String!
+}

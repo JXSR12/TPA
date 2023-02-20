@@ -1,0 +1,35 @@
+.promo-carousel-container {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.promo-carousel-container .selected-image {
+  width: 80%;
+  height: 60vh;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.promo-carousel-container .carousel {
+  position: relative;
+}
+
+.promo-carousel-container button {
+  width: fit-content;
+  padding: 0 8px;
+  border-radius: 50%;
+}
+
+.text-button{
+  font-size: 4vh;
+}
+
+.text-button:hover{
+  transform: scale(1.5);
+  cursor: pointer;
+}
+
+

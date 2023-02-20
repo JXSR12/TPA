@@ -1,0 +1,41 @@
+enum WishlistType {
+  PUBLIC
+  PRIVATE
+}
+
+type Cart {
+  user: User! @goField(forceResolver: true)
+  product: Product! @goField(forceResolver: true)
+  quantity: Int!
+  notes: String!
+}
+
+type Wishlist {
+  id: ID!
+  title: String!
+  type: WishlistType!
+  user: User! @goField(forceResolver: true)
+}
+
+type WishlistItem {
+  wishlist: Wishlist! @goField(forceResolver: true)
+  product: Product! @goField(forceResolver: true)
+}
+
+extend type Query {
+  cart(productID: ID!): Cart! @auth
+  carts: [Cart!]! @auth
+
+  wishlists: [Wishlist!]!
+}
+
+extend type Mutation {
+  createCart(productID: ID!, quantity: Int!, notes: String!): Cart! @auth
+  updateCart(productID: ID!, quantity: Int!, notes: String!): Cart! @auth
+  deleteCart(productID: ID!): Boolean! @auth
+
+  createWishlist(title: String!, type: WishlistType!): Wishlist! @auth
+  createWishlistItem(wishlistId: ID!, productId: ID!): WishlistItem! @auth
+  deleteWishlist(id: ID!): Boolean! @auth
+  deleteWishlistItem(wishlistId: ID!, productId: ID!): Boolean! @auth
+}
