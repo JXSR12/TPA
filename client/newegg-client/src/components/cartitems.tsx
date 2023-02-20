@@ -1,6 +1,7 @@
 import { CartItem } from '@/interfaces/cart';
 import { Product } from '@/interfaces/product';
 import styles from '@/styles/CartItem.module.css';
+import utilStyles from '@/styles/Utils.module.css';
 import { ALLPRODUCTS_QUERY, CARTPRODUCTS_QUERY, GRAPHQL_API, REMOVECART_QUERY, SEARCHPRODUCTS_QUERY, UPDATECART_QUERY, USERS_QUERY } from '@/utils/constants';
 import axios from 'axios';
 import Image from 'next/image';
@@ -19,6 +20,9 @@ export default function Carts(){
   const [subtotalPrice, setSubtotalPrice] = React.useState<number>(0);
   const [promoPrice, setPromoPrice] = React.useState<number>(0);
   const [totalPrice, setTotalPrice] = React.useState<number>(0);
+
+  const [ showError, setShowError ] = React.useState<boolean>(false);
+  const [ showSuccess, setShowSuccess ] = React.useState<boolean>(false);
 
   const handleQuantityChange = (event: React.ChangeEvent<{ value: any }>, productId: string) => {
     var newqty : number = event.target.value as number;
@@ -64,13 +68,18 @@ export default function Carts(){
         console.log(id)
         console.log(res.data)
         retrieveItems()
+        setShowSuccess(true)
+        setTimeout(() => {setShowSuccess(false)}, 2000)
       }).catch(err => {
+        setShowError(true)
+        setTimeout(() => {setShowError(false)}, 2000)
         console.log("Error updating product in cart")
       }).finally(() => {
         setLoading(false)
       })
     }else{
-      alert("Quantity must be above 0 to update cart, remove item instead!")
+      setShowError(true)
+      setTimeout(() => {setShowError(false)}, 2000)
     }
   }
 
@@ -88,7 +97,11 @@ export default function Carts(){
         console.log(id)
         console.log(res.data)
         retrieveItems()
+        setShowSuccess(true)
+        setTimeout(() => {setShowSuccess(false)}, 2000)
       }).catch(err => {
+        setShowError(true)
+        setTimeout(() => {setShowError(false)}, 2000)
         console.log("Error deleting product in cart")
       }).finally(() => {
         setLoading(false)
@@ -183,6 +196,8 @@ export default function Carts(){
       </div>
     </aside>
     </div>
+    <div id={utilStyles['error-snackbar']} className={showError ? utilStyles['show'] : ''}>Quantity must be above 0 to update cart, remove item instead!</div>
+    <div id={utilStyles['success-snackbar']} className={showSuccess ? utilStyles['show'] : ''}>Successfully updated cart!</div>
     </div>
   )
 }

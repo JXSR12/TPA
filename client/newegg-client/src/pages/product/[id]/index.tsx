@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from '@/styles/Product.module.css';
+import utilStyles from '@/styles/Utils.module.css';
 import Navbar from '@/components/navbar';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
@@ -22,6 +23,9 @@ export default function ProductPage(this: any){
   const [images, setImages] = React.useState<string[]>([]);
   const [selImgIndex, setSelImgIndex ] = React.useState<number>(0);
   const [similars, setSimilars] = React.useState<Product[]>([]);
+
+  const [ showError, setShowError ] = React.useState<boolean>(false);
+  const [ showSuccess, setShowSuccess ] = React.useState<boolean>(false);
 
   const handleQuantityChange = (event: React.ChangeEvent<{ value: any }>) => {
     console.log("Quantity Change Custom")
@@ -94,13 +98,18 @@ export default function ProductPage(this: any){
       ).then(res => {
         console.log(id)
         console.log(res.data)
+        setShowSuccess(true)
+        setTimeout(() => {setShowSuccess(false)}, 2000)
       }).catch(err => {
         console.log("Error adding product to cart")
+        setShowError(true)
+        setTimeout(() => {setShowError(false)}, 2000)
       }).finally(() => {
         setLoading(false)
       })
     }else{
-      alert("Quantity must be above 0 to add to cart!")
+      setShowError(true)
+      setTimeout(() => {setShowError(false)}, 2000)
     }
   }
 
@@ -227,6 +236,8 @@ export default function ProductPage(this: any){
       </div>
     </section>
     </div>
+    <div id={utilStyles['error-snackbar']} className={showError ? utilStyles['show'] : ''}>Quantity must be above 0 to add to cart!</div>
+    <div id={utilStyles['success-snackbar']} className={showSuccess ? utilStyles['show'] : ''}>Sucessfully added to cart!</div>
     </>
     </HydrationProvider>
   )

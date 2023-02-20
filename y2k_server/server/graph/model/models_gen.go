@@ -13,6 +13,11 @@ type AuthOps struct {
 	Register interface{} `json:"register"`
 }
 
+type ChangeUser struct {
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
+}
+
 type NewProduct struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description"`

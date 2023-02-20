@@ -31,6 +31,11 @@ type User{
   mailing: Boolean!
 }
 
+ input ChangeUser{
+  name: String!
+  phone: String!
+}
+
 
 type AuthOps{
   login(email: String!, password: String!): Any! @goField(forceResolver: true)
@@ -39,11 +44,14 @@ type AuthOps{
 
 type Mutation {
     auth: AuthOps! @goField(forceResolver: true)
+    updateUser(input: ChangeUser!): User! @auth
+    updateUserPassword(oldpassword: String!, newpassword: String!): User! @auth
 }
 
 
 type Query{
      user(id: ID!): User! @goField(forceResolver: true) @auth
+     getUser: User! @goField(forceResolver: true) @auth
      users: [User!]! @goField(forceResolver: true) @auth
      protected: String! @goField(forceResolver: true) @auth
 }

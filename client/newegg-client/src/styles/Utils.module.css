@@ -13,6 +13,21 @@
   font-size: 24px;
 }
 
+#success-snackbar {
+  visibility: hidden; /* Hidden by default. Visible on click */
+  min-width: 250px; /* Set a default minimum width */
+  background-color: #1db050; /* Red background color */
+  color: #fff; /* White text color */
+  text-align: center; /* Centered text */
+  border-radius: 5px; /* Rounded borders */
+  padding: 16px; /* Padding */
+  position: fixed; /* Sit on top of the screen */
+  z-index: 1; /* Add a z-index if needed */
+  left: 15px;
+  bottom: 30px;
+  font-size: 24px;
+}
+
 /* Show the snackbar when clicking on a button (class added with JavaScript) */
 .show {
   visibility: visible !important; /* Show the snackbar */

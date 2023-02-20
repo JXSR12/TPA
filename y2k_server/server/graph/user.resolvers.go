@@ -7,8 +7,10 @@ package graph
 import (
 	"context"
 
+	"github.com/jxsr12/oldegg/config"
 	"github.com/jxsr12/oldegg/graph/model"
 	"github.com/jxsr12/oldegg/service"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // Login is the resolver for the login field.
@@ -26,9 +28,70 @@ func (r *mutationResolver) Auth(ctx context.Context) (*model.AuthOps, error) {
 	return &model.AuthOps{}, nil
 }
 
+// UpdateUser is the resolver for the updateUser field.
+func (r *mutationResolver) UpdateUser(ctx context.Context, input model.ChangeUser) (*model.User, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	user, _ := service.UserGetByID(ctx, userID)
+
+	if user == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, user gaada",
+		}
+	}
+	user.Name = input.Name
+	user.Phone = input.Phone
+
+	return user, db.Save(user).Error
+}
+
+// UpdateUserPassword is the resolver for the updateUserPassword field.
+func (r *mutationResolver) UpdateUserPassword(ctx context.Context, oldpassword string, newpassword string) (*model.User, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	user, _ := service.UserGetByID(ctx, userID)
+
+	if user == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, user gaada",
+		}
+	}
+
+	if err := model.ComparePassword(user.Password, oldpassword); err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, password lama salah",
+		}
+	}
+
+	user.Password = model.HashPassword(newpassword)
+
+	return user, db.Save(user).Error
+}
+
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	return service.UserGetByID(ctx, id)
+}
+
+// GetUser is the resolver for the getUser field.
+func (r *queryResolver) GetUser(ctx context.Context) (*model.User, error) {
+	return service.UserGetByID(ctx, ctx.Value("auth").(*service.JwtCustomClaim).ID)
 }
 
 // Users is the resolver for the users field.

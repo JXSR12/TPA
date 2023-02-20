@@ -163,3 +163,47 @@ query{
   }
 }
 `
+
+export const GETUSER_QUERY =
+`
+query{
+  getUser{
+    name,
+    id,
+    email,
+    phone,
+    banned,
+    role,
+    mailing
+  }
+}
+`
+export const UPDATEPROFILE_QUERY = (name: string, phone: string) =>
+`
+mutation{
+  updateUser(input: {name: "${name}", phone: "${phone}"}){
+    name,
+    id,
+    email,
+    phone,
+    banned,
+    role,
+    mailing
+  }
+}
+`
+
+export const UPDATEPASSWORD_QUERY = (oldpass: string, newpass: string) =>
+`
+mutation{
+  updateUserPassword(oldpassword: "${oldpass}", newpassword: "${newpass}"){
+    name,
+    id,
+    email,
+    phone,
+    banned,
+    role,
+    mailing
+  }
+}
+`

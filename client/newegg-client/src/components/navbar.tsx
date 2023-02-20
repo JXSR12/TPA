@@ -8,34 +8,32 @@ import Router from 'next/router';
 import { useSessionStorage } from 'usehooks-ts'
 import { HydrationProvider, Server, Client } from "react-hydration-provider";
 import axios from 'axios';
-import { GRAPHQL_API, USERS_QUERY } from '@/utils/constants';
+import { GETUSER_QUERY, GRAPHQL_API, USERS_QUERY } from '@/utils/constants';
 import { User } from '@/interfaces/user';
 import React from 'react';
 import { GiHamburgerMenu } from 'react-icons/gi'
 import { IoMdClose } from 'react-icons/io'
+import { IoPersonCircleSharp } from 'react-icons/io5'
 
 export default function Navbar(){
   const [ jwtToken, setJwtToken ] = useSessionStorage('jwtToken', 'NULL');
   const [ authUserId, setAuthUserId ] = useSessionStorage('authUserId', 'NULL');
   const [ searchQuery, setSearchQuery ] = React.useState<string>("");
   const [ mobile, setMobile ] = React.useState<boolean>(false);
+  const [ userName, setUserName ] = React.useState<string>("My Profile");
 
-  const checkToken = () => {
+  const getUser = () => {
     axios.post(GRAPHQL_API, {
-      query: USERS_QUERY
+      query: GETUSER_QUERY
     },{
       headers: {
         Authorization: "Bearer " + jwtToken
       }
     }
     ).then(res => {
-      alert("All Registered Users (Names): " + (res.data.data.users as any[]).map(u => {
-        return "[ " + (u as User).role + " | " + (u as User).name + " (" + (u as User).email + ") ]"
-      }))
+      setUserName(res.data.data.getUser.name)
     }).catch(err => {
-      console.log(err.data)
-      console.log("Token: " + jwtToken)
-      alert("No Access to All Registered Users Data")
+      console.log(err)
     })
   }
 
@@ -57,6 +55,10 @@ export default function Navbar(){
       window.location.href = '/search?search=' + searchQuery
     }
   }
+
+  React.useEffect(() => {
+    getUser()
+  }, [jwtToken]);
 
   return(
     <HydrationProvider>
@@ -113,6 +115,11 @@ export default function Navbar(){
             <GiHamburgerMenu/>
         </div>
 
+
+        <Link href={jwtToken !== 'NULL' ? "/profile" : "/login"} className={styles['username']}>
+              <IoPersonCircleSharp/> &nbsp; {userName}
+        </Link>
+
         {
             jwtToken !== 'NULL' &&
           <button onClick={signOut} className={` ${styles['button-orange']} ${styles['btntrans']}  ${styles['button']} `}>
@@ -155,9 +162,15 @@ export default function Navbar(){
                 <input className={searchStyles['input']} id="search" type="search" onChange={handleSearchChange} placeholder="Search anything..." autoFocus required />
                 <button className={searchStyles['button']} type="submit" onClick={handleSearch}>Go</button>
               </div>
-              <span className={styles['text-m']}>Select Address</span>
-              <span className={styles['text-m']}>Returns &amp; Orders</span>
-              <span className={styles['text-m']}>Cart</span>
+              <Link href={jwtToken !== 'NULL' ? "/" : "/login"} className={styles['text-m']}>
+                Select Address
+              </Link>
+              <Link href={jwtToken !== 'NULL' ? "/" : "/login"} className={styles['text-m']}>
+                Returns &amp; Orders
+              </Link>
+              <Link href={jwtToken !== 'NULL' ? "/cart" : "/login"} className={styles['text-m']}>
+                <span>Cart</span>
+              </Link>
             </nav>
           </div>
         </div>
