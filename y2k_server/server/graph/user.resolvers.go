@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jxsr12/oldegg/config"
 	"github.com/jxsr12/oldegg/graph/model"
@@ -82,6 +83,11 @@ func (r *mutationResolver) UpdateUserPassword(ctx context.Context, oldpassword s
 	user.Password = model.HashPassword(newpassword)
 
 	return user, db.Save(user).Error
+}
+
+// CreateUser is the resolver for the createUser field.
+func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) (interface{}, error) {
+	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
 }
 
 // User is the resolver for the user field.

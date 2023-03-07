@@ -8,8 +8,15 @@ type Review {
   isAnonymous: Boolean!
 }
 
+type ReviewCredit {
+  product: Product! @goField(forceResolver: true)
+  user: User! @goField(forceResolver: true)
+}
+
 extend type Query {
   reviews(productID: ID!): [Review!]!
+  userReviews: [Review!]! @auth
+  reviewableProducts: [Product!]! @auth
 }
 
 extend type Mutation {

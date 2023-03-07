@@ -180,9 +180,22 @@ func (r *productResolver) Images(ctx context.Context, obj *model.Product) ([]*mo
 	return images, db.Where("product_id = ?", obj.ID).Find(&images).Error
 }
 
+// Shop is the resolver for the shop field.
+func (r *productResolver) Shop(ctx context.Context, obj *model.Product) (*model.Shop, error) {
+	db := config.GetDB()
+
+	model := new(model.Shop)
+
+	return model, db.Where("id = ?", obj.ShopID).First(model).Error
+}
+
 // Group is the resolver for the group field.
 func (r *productResolver) Group(ctx context.Context, obj *model.Product) (*model.ProductGroup, error) {
-	panic(fmt.Errorf("not implemented: Group - group"))
+	db := config.GetDB()
+
+	model := new(model.ProductGroup)
+
+	return model, db.Where("id = ?", obj.GroupID).First(model).Error
 }
 
 // Brand is the resolver for the brand field.
@@ -205,7 +218,14 @@ func (r *productResolver) Category(ctx context.Context, obj *model.Product) (*mo
 
 // Reviews is the resolver for the reviews field.
 func (r *productResolver) Reviews(ctx context.Context, obj *model.Product) ([]*model.Review, error) {
-	panic(fmt.Errorf("not implemented: Reviews - reviews"))
+	db := config.GetDB()
+
+	var reviews []*model.Review
+	if err := db.Where("product_id = ?", obj.ID).Find(&reviews).Error; err != nil {
+		return nil, err
+	}
+
+	return reviews, nil
 }
 
 // Product is the resolver for the product field.
@@ -299,6 +319,18 @@ func (r *queryResolver) Products(ctx context.Context, shopID *string, limit *int
 	}
 
 	return models, temp.Find(&models).Error
+}
+
+// Brands is the resolver for the brands field.
+func (r *queryResolver) Brands(ctx context.Context, topSold bool) ([]*model.ProductBrand, error) {
+	db := config.GetDB()
+
+	var models []*model.ProductBrand
+	if !topSold {
+		return models, db.Find(&models).Error
+	} else {
+		return models, db.Raw("SELECT FROM transaction_details td JOIN products p ON p.id = td.product_id  GROUP BY product_id, p.id ORDER BY SUM(quantity) DESC").Scan(&models).Error
+	}
 }
 
 // Category returns CategoryResolver implementation.

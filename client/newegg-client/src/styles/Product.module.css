@@ -222,6 +222,27 @@
   color: #fff;
 }
 
+._p-add-wishlist .btn {
+  text-transform: capitalize;
+  padding: 1em 2em;
+  border-radius: 52px;
+  margin: 1vw 0vw 0vw 0vw;
+  font-size: 1em;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+._p-add-wishlist .btn:hover{
+background-color: #f29cc7;
+color: #fff;
+}
+
+._p-qty-and-cart{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
 /*=========Recent-post==========*/
 .title_bx h3.title {
     font-size: 22px;
@@ -356,9 +377,47 @@
 .sq_box span.wishlist i:hover {
     color: #fd7f34;
 }
+._p-shop-container{
+  padding: 1em;
+  border-width: 2px;
+  border-color: #eee;
+  border: #eee solid 2px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
 
+._p-shop{
+  padding: 2em;
+}
+
+._p-shop-detail-btn{
+  width: 30%;
+  border-radius: 10px;
+  border: #eee solid 2px;
+  padding: 0.5em;
+  background-color: #fd7f34;
+  font-size: 1em;
+  font-weight: bold;
+  color: white;
+}
+
+._p-shop-detail-btn:hover{
+  background-color: #242424;
+  cursor: pointer;
+}
 
 @media only screen and (max-width: 768px) {
+  ._p-qty-and-cart{
+    flex-direction: column;
+    margin-bottom: 2vh;
+  }
+
+  ._p-qty-and-cart .btn{
+    width: 100%;
+  }
+
   .my_img {
     width: 60vw;
   }
@@ -368,6 +427,10 @@
   }
   .piclist li{
     height: 20vw;
+}
+
+._p-shop-detail-btn{
+  width: 100%;
 }
 
 .qty-input{

@@ -42,6 +42,9 @@
   font-weight: 700;
   text-decoration: none;
 }
+.navlink:hover {
+  color: #ffa33a;
+}
 .burger-menu {
   font-size: 2rem;
   margin-left: 2vh;
@@ -183,6 +186,10 @@
   background: #0b0b0b;
   color: #e3e3e3;
   border-color: #fff;
+}
+
+.homelink{
+  cursor: pointer;
 }
 
 .desktop-inactive{

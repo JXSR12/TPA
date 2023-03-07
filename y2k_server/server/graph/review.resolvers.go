@@ -6,32 +6,166 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/jxsr12/oldegg/config"
 	"github.com/jxsr12/oldegg/graph/model"
+	"github.com/jxsr12/oldegg/service"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // CreateReview is the resolver for the createReview field.
 func (r *mutationResolver) CreateReview(ctx context.Context, productID string, rating int, description string, isAnonymous bool) (*model.Review, error) {
-	panic(fmt.Errorf("not implemented: CreateReview - createReview"))
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	// Check if ReviewCredit exists for the user and product
+	var reviewCredit model.ReviewCredit
+	err := db.Where("user_id = ? AND product_id = ?", userID, productID).First(&reviewCredit).Error
+	if err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, ReviewCredit doesn't exist",
+		}
+	}
+
+	// Create the review
+	model := &model.Review{
+		ID:          uuid.NewString(),
+		CreatedAt:   time.Now(),
+		UserID:      userID,
+		ProductID:   productID,
+		Rating:      rating,
+		Description: description,
+		IsAnonymous: isAnonymous,
+	}
+
+	if err := db.Create(model).Error; err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error creating review",
+		}
+	}
+
+	// delete one ReviewCredit entity
+	if err := db.Where("user_id = ? AND product_id = ?", userID, productID).Delete(&reviewCredit).Error; err != nil {
+		return nil, err
+	}
+
+	return model, nil
 }
 
 // Reviews is the resolver for the reviews field.
 func (r *queryResolver) Reviews(ctx context.Context, productID string) ([]*model.Review, error) {
-	panic(fmt.Errorf("not implemented: Reviews - reviews"))
+	db := config.GetDB()
+
+	var models []*model.Review
+	return models, db.Where("product_id = ?", productID).Find(&models).Error
+}
+
+// UserReviews is the resolver for the userReviews field.
+func (r *queryResolver) UserReviews(ctx context.Context) ([]*model.Review, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	// Retrieve user ID from context
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	// Query all reviews by user ID
+	var models []*model.Review
+	return models, db.Where("user_id = ?", userID).Find(&models).Error
+}
+
+// ReviewableProducts is the resolver for the reviewableProducts field.
+func (r *queryResolver) ReviewableProducts(ctx context.Context) ([]*model.Product, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	// Get the user ID from the context.
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	// Find all products that have a ReviewCredit with the user's ID.
+	var products []*model.Product
+	err := db.
+		Table("products").
+		Joins("INNER JOIN review_credits ON products.id = review_credits.product_id").
+		Where("review_credits.user_id = ?", userID).
+		Group("products.id").
+		Find(&products).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
 }
 
 // User is the resolver for the user field.
 func (r *reviewResolver) User(ctx context.Context, obj *model.Review) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	db := config.GetDB()
+
+	var user model.User
+	if err := db.Where("id = ?", obj.UserID).First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 // Product is the resolver for the product field.
 func (r *reviewResolver) Product(ctx context.Context, obj *model.Review) (*model.Product, error) {
-	panic(fmt.Errorf("not implemented: Product - product"))
+	db := config.GetDB()
+	var product model.Product
+	if err := db.Where("id = ?", obj.ProductID).First(&product).Error; err != nil {
+		return nil, err
+	}
+
+	return &product, nil
+}
+
+// Product is the resolver for the product field.
+func (r *reviewCreditResolver) Product(ctx context.Context, obj *model.ReviewCredit) (*model.Product, error) {
+	db := config.GetDB()
+	var product model.Product
+	if err := db.Where("id = ?", obj.ProductID).First(&product).Error; err != nil {
+		return nil, err
+	}
+
+	return &product, nil
+}
+
+// User is the resolver for the user field.
+func (r *reviewCreditResolver) User(ctx context.Context, obj *model.ReviewCredit) (*model.User, error) {
+	db := config.GetDB()
+	var user model.User
+	if err := db.Where("id = ?", obj.UserID).First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 // Review returns ReviewResolver implementation.
 func (r *Resolver) Review() ReviewResolver { return &reviewResolver{r} }
 
+// ReviewCredit returns ReviewCreditResolver implementation.
+func (r *Resolver) ReviewCredit() ReviewCreditResolver { return &reviewCreditResolver{r} }
+
 type reviewResolver struct{ *Resolver }
+type reviewCreditResolver struct{ *Resolver }

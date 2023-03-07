@@ -1,0 +1,14 @@
+
+type Chat{
+    ID: ID!
+    Users: [User!]! @goField(forceResolver: true)
+    Messages: [Message!]! @goField(forceResolver: true)
+}
+
+type Message{
+    ID: ID!
+    Content: String!
+    User: User! @goField(forceResolver: true)
+    Chat: Chat! @goField(forceResolver: true)
+    FileURL: String!
+}

@@ -13,6 +13,7 @@ import Carousel, { ImageType } from '@/components/carousel';
 import React from 'react';
 import Recommendations from '@/components/recommendations';
 import Searchs from '@/components/searchproduct';
+import Footer from '@/components/footer';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -36,6 +37,7 @@ export default function SearchProduct() {
       <main>
         <Searchs search={search as string}/>
       </main>
+      <Footer/>
     </>
   );
 }

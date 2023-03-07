@@ -6,6 +6,79 @@
 .title{
   font-size: 2em;
   text-align: center;
+  text-transform: capitalize;
+}
+
+.select-content {
+  background-color: #ccc;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  display: block;
+  font-size: 1rem;
+  height: 2rem;
+  width: 100%;
+  margin-bottom: 2em;
+}
+
+.select-content-chat {
+  background-color: #ccc;
+  border: 1px solid #aaa;
+  border-radius: 4px;
+  display: block;
+  font-size: 1rem;
+  height: 2rem;
+  width: 50%;
+  margin-bottom: 2em;
+}
+
+.cs-chat{
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  width: 90%;
+  height: 50vh;
+}
+
+.sender-name, .receiver-name{
+  padding-top: 1em;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
+.sent-message, .received-message{
+  padding: 1em;
+}
+
+.sent-message{
+  color: rgb(12, 141, 167);
+}
+
+.received-message{
+  color: rgb(250, 135, 41);
+}
+
+.chat-set:hover{
+  background-color: #ffffff31;
+}
+
+.cs-sent{
+  background-color: rgba(0, 45, 55, 0.311);
+}
+
+.cs-received{
+  background-color: rgba(76, 34, 0, 0.245);
+}
+
+.input-box{
+  width: 90%;
+}
+
+.send-msg-input{
+  width: 100%;
+  resize: none;
+}
+
+.send-msg-btn{
+  width: 100%;
 }
 
 .changepw-link{
@@ -34,6 +107,36 @@
         align-items: flex-start;
         justify-content: flex-start;
       }
+
+      &.column-chat {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-start;
+        margin-top: 2em;
+      }
+    }
+
+    .chat-box {
+      width: 100%;
+      max-width: 100%;
+      margin: 3rem 2rem;
+      padding: 2rem;
+      display: flex;
+      flex-flow: wrap column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0.25rem;
+      background-color: #2e2e2e;
+
+      .chat-title {
+        width: 100%;
+        margin: 0 0 1rem 0;
+        text-align: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        text-transform: capitalize;
+      }
+
     }
 
     .profile-pic {
@@ -196,7 +299,7 @@
         width: 100%;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: space-around;
 
         .lx-btn {
           padding: 0.5rem 1rem;
@@ -236,6 +339,97 @@
   }
 }
 
+.actions {
+  margin-top: 2em;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+
+  .lx-btn {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: rgb(0, 0, 0);
+    background-color: rgb(71, 71, 71);
+    border-radius: 5px;
+    cursor: pointer;
+
+    &#cancel,
+    &.cancel {
+      color: #fff;
+      background-color: #495057;
+    }
+
+    &#clear,
+    &.clear {
+      color: black;
+      background-color: white;
+    }
+
+    &#save,
+    &.save {
+      color: #000;
+      background-color: #ffa33a;
+    }
+
+    &#review,
+    &.review {
+      color: #000;
+      background-color: #ffcb72;
+    }
+  }
+
+  .lx-btn:hover{
+    transform: scale(1.1);
+  }
+}
+
+.grid-container{
+  padding: 2em;
+  display: flex;
+  flex-direction: row;
+  column-gap: 1em;
+  row-gap: 1em;
+  flex-wrap: wrap;
+}
+
+.grid-item-empty{
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 19%;
+  border: 1px rgb(210, 210, 210) solid;
+  width: 49%;
+}
+
+.grid-item{
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 8%;
+  border: 1px rgb(210, 210, 210) solid;
+  width: 49%;
+}
+
+.grid-item-empty:hover, .grid-item:hover{
+  background-color: rgba(255, 255, 255, 0);
+  border-color: #ffa33a;
+  cursor: pointer;
+}
+
+.grid-item-empty p{
+  text-align: center;
+}
+
+.grid-item p{
+  font-size: 1.5em;
+}
+
+.large-icon{
+  font-size: 10vh;
+}
+
 @media screen and (max-width: 1024px) {
   .main {
     margin: 1em;
@@ -246,6 +440,31 @@
         width: 100%;
         margin: 0;
       }
+    }
+  }
+
+  .grid-item, .grid-item-empty{
+    padding: 10%;
+    border: 1px white solid;
+    width: 100%;
+  }
+
+  .large-icon{
+    text-align: center;
+    font-size: 70px;
+  }
+
+  .grid-item-empty p{
+    font-size: 28px;
+  }
+
+  .grid-container{
+    flex-direction: column;
+  }
+
+  .actions {
+    .lx-btn {
+      font-size: 12px;
     }
   }
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/jxsr12/oldegg/graph/model"
-
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"gorm.io/gorm"
 )
@@ -40,6 +39,10 @@ func UserLogin(ctx context.Context, email string, password string) (interface{},
 				Message: "Email not found",
 			}
 		}
+		return nil, err
+	}
+
+	if getUser.Banned {
 		return nil, err
 	}
 

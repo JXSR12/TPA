@@ -12,6 +12,9 @@ import Navbar from '@/components/navbar';
 import Carousel, { ImageType } from '@/components/carousel';
 import React from 'react';
 import Recommendations from '@/components/recommendations';
+import Footer from '@/components/footer';
+import BrandsView from '@/components/brandshome';
+import ShopsView from '@/components/shopshome';
 
 
 // Note: The subsets need to use single quotes because the font loader values must be explicitly written literal.
@@ -48,8 +51,11 @@ export default function Home() {
       <Navbar/>
       <main>
         <Carousel images={images}></Carousel>
+        <BrandsView limit={10}/>
+        <ShopsView limit={3}/>
         <Recommendations/>
       </main>
+      <Footer/>
     </>
   );
 }

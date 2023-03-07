@@ -23,7 +23,7 @@ export default function Recommendations(){
   const retrieveItems = (page: number) => {
     setLoading(true);
       axios.post(GRAPHQL_API, {
-        query: ALLPRODUCTS_QUERY(5, page*5)
+        query: ALLPRODUCTS_QUERY(6, page*6)
       }
       ).then(res => {
         var newPage = page + 1

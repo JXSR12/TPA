@@ -18,14 +18,12 @@ import (
 // CreateShop is the resolver for the createShop field.
 func (r *mutationResolver) CreateShop(ctx context.Context, input model.NewShop) (*model.Shop, error) {
 	db := config.GetDB()
-	fmt.Println("CREATE SHOP")
 	if ctx.Value("auth") == nil {
 		return nil, &gqlerror.Error{
 			Message: "Error, token gaada",
 		}
 	}
 
-	fmt.Println("AUTH USER ID", ctx.Value("auth").(*service.JwtCustomClaim).ID)
 	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
 
 	shop, _ := service.ShopGetByUserID(ctx, userID)
@@ -42,6 +40,7 @@ func (r *mutationResolver) CreateShop(ctx context.Context, input model.NewShop) 
 		Address:     input.Address,
 		ProfilePic:  input.ProfilePic,
 		Description: input.Description,
+		Banner:      input.Banner,
 		UserID:      userID,
 	}
 
@@ -50,27 +49,135 @@ func (r *mutationResolver) CreateShop(ctx context.Context, input model.NewShop) 
 
 // UpdateShop is the resolver for the updateShop field.
 func (r *mutationResolver) UpdateShop(ctx context.Context, input model.NewShop) (*model.Shop, error) {
-	panic(fmt.Errorf("not implemented: UpdateShop - updateShop"))
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	shop, err := service.ShopGetByUserID(ctx, userID)
+
+	if err != nil || shop == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, shop not found",
+		}
+	}
+
+	if input.Name != "" {
+		shop.Name = input.Name
+	}
+
+	if input.Address != "" {
+		shop.Address = input.Address
+	}
+
+	if input.ProfilePic != "" {
+		shop.ProfilePic = input.ProfilePic
+	}
+
+	if input.Description != "" {
+		shop.Description = input.Description
+	}
+
+	if input.Banner != "" {
+		shop.Banner = input.Banner
+	}
+
+	if err := db.Save(&shop).Error; err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, could not update shop",
+		}
+	}
+
+	return shop, nil
 }
 
 // Shop is the resolver for the shop field.
 func (r *queryResolver) Shop(ctx context.Context, id *string, keyword *string) (*model.Shop, error) {
-	panic(fmt.Errorf("not implemented: Shop - shop"))
+	db := config.GetDB()
+
+	var shop model.Shop
+
+	if id != nil {
+		if err := db.Where("id = ?", *id).First(&shop).Error; err != nil {
+			return nil, &gqlerror.Error{
+				Message: "Error, shop not found",
+			}
+		}
+	} else if keyword != nil {
+		if err := db.Where("name LIKE ?", "%"+*keyword+"%").First(&shop).Error; err != nil {
+			return nil, &gqlerror.Error{
+				Message: "Error, shop not found",
+			}
+		}
+	}
+
+	return &shop, nil
 }
 
 // Shops is the resolver for the shops field.
 func (r *queryResolver) Shops(ctx context.Context) ([]*model.Shop, error) {
-	panic(fmt.Errorf("not implemented: Shops - shops"))
+	db := config.GetDB()
+
+	var shops []*model.Shop
+
+	if err := db.Find(&shops).Error; err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, could not get shops",
+		}
+	}
+
+	return shops, nil
 }
 
 // User is the resolver for the user field.
 func (r *shopResolver) User(ctx context.Context, obj *model.Shop) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	db := config.GetDB()
+
+	var user model.User
+
+	if err := db.Where("id = ?", obj.UserID).First(&user).Error; err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, user not found",
+		}
+	}
+
+	return &user, nil
 }
 
 // Products is the resolver for the products field.
 func (r *shopResolver) Products(ctx context.Context, obj *model.Shop, keyword *string, topSold *bool) ([]*model.Product, error) {
-	panic(fmt.Errorf("not implemented: Products - products"))
+	db := config.GetDB()
+
+	// Create a query builder for the "products" table
+	query := db.Model(&model.Product{})
+
+	// Filter by shop ID
+	query = query.Where("shop_id = ?", obj.ID)
+
+	// Apply keyword filter if provided
+	if keyword != nil {
+		// Search for products with name or description that contains the keyword
+		keywordStr := fmt.Sprintf("%%%s%%", *keyword)
+		query = query.Where("name LIKE ? OR description LIKE ?", keywordStr, keywordStr)
+	}
+
+	// Sort by sales count if topSold flag is true
+	if topSold != nil && *topSold {
+		query = query.Order("sales_count DESC")
+	}
+
+	// Execute the query and retrieve the results
+	var products []*model.Product
+	if err := query.Find(&products).Error; err != nil {
+		return nil, err
+	}
+
+	return products, nil
 }
 
 // Shop returns ShopResolver implementation.

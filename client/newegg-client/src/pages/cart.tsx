@@ -13,6 +13,7 @@ import Carousel, { ImageType } from '@/components/carousel';
 import React from 'react';
 import Recommendations from '@/components/recommendations';
 import Carts from '@/components/cartitems';
+import Footer from '@/components/footer';
 
 
 // Note: The subsets need to use single quotes because the font loader values must be explicitly written literal.
@@ -36,6 +37,7 @@ export default function Cart() {
       <main>
         <Carts/>
       </main>
+      <Footer/>
     </>
   );
 }

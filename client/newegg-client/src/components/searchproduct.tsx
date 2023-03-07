@@ -1,5 +1,6 @@
 import { Product } from '@/interfaces/product';
 import styles from '@/styles/CardGrid.module.css';
+import searchStyles from '@/styles/SearchBar.module.css'
 import { ALLPRODUCTS_QUERY, GRAPHQL_API, SEARCHPRODUCTS_QUERY, USERS_QUERY } from '@/utils/constants';
 import axios from 'axios';
 import { useRouter } from 'next/router';
@@ -13,12 +14,20 @@ export default function Searchs(props: {search: string}){
 
   const [ jwtToken, setJwtToken ] = useSessionStorage('jwtToken', 'NULL')
   const [ items, setItems ] = React.useState<Product[]>([])
+
+  const [ filteredItems, setFilteredItems ] = React.useState<Product[]>([])
+
+  const [ paginatedItems, setPaginatedItems ] = React.useState<Product[]>([])
+
   const [userList, setUserList] = React.useState([]);
-  const [page, setPage] = React.useState(0);
+  const [page, setPage] = React.useState(1);
+  const [maxPage, setMaxPage] = React.useState(15);
   const [loading, setLoading] = React.useState(false);
   const [noData, setNoData] = React.useState(false);
-  const [scrolling, setScrolling] = React.useState(false);
-  const [scrollTop, setScrollTop] = React.useState(0);
+
+  const [maxItem, setMaxItem] = React.useState(6);
+
+  const [ searchQuery, setSearchQuery ] = React.useState<string>("");
 
   var listenerCount = 0;
   var listenerAdded = false;
@@ -26,7 +35,7 @@ export default function Searchs(props: {search: string}){
   const retrieveItems = () => {
     setLoading(true);
       axios.post(GRAPHQL_API, {
-        query: SEARCHPRODUCTS_QUERY(1000, 0, search as string)
+        query: SEARCHPRODUCTS_QUERY(999999, 0, search as string)
       }
       ).then(res => {
         setItems(res.data.data.products)
@@ -42,21 +51,81 @@ export default function Searchs(props: {search: string}){
       })
   }
 
+  const handleSearchChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setSearchQuery(event.target.value);
+  }
+
+  const handleSearch = (event: any) => {
+
+  }
+
+  React.useEffect(() => {
+    setFilteredItems(items.filter(e => {
+      return JSON.stringify(e).toLowerCase().includes(searchQuery.toLowerCase())
+    }))
+  }, [items, searchQuery])
+
+  React.useEffect(() => {
+    console.log("ITEM LENGTH: " + filteredItems.length)
+    setMaxPage(Math.ceil(filteredItems.length / maxItem))
+  }, [filteredItems, searchQuery])
+
   React.useEffect(() => {
     retrieveItems()
   }, [search])
+
+  React.useEffect(() => {
+    setPage(1)
+  }, [maxPage])
+
+
+  React.useEffect(() => {
+    setPaginatedItems(filteredItems.slice((page-1)*maxItem,(page)*maxItem))
+  }, [page, filteredItems])
 
   return(
     <div className={styles['container']}>
       <h2 className={styles['header']}>Search result for '{search}'</h2>
       <br/>
+      <div className={searchStyles['search-form-order']} role="search">
+        <label htmlFor='search' className={searchStyles['label']}>Search</label>
+        <input className={searchStyles['input-order']} id="search" type="search" onChange={handleSearchChange} placeholder="Search within this search query.." autoFocus required />
+        <button className={searchStyles['button-order']} type="submit" onClick={handleSearch}>Search</button>
+      </div>
+      <br/>
+      {filteredItems.length > 0 &&
+      <center>
+        {page != 1 && <button className={styles['pagination-button']} onClick={e => setPage(1)}>First</button>}
+        {page >= 2 && <button className={styles['pagination-button']} onClick={e => setPage(page-1)}>&lt;&nbsp;Prev</button>}
+        {page >= 3 && <button className={styles['pagination-button']} onClick={e => setPage(page-2)}>{page-2}</button>}
+        {page >= 2 && <button className={styles['pagination-button']} onClick={e => setPage(page-1)}>{page-1}</button>}
+        <button className={styles['pagination-button-cur']}>{page}</button>
+        {page <= (maxPage-1) && <button className={styles['pagination-button']} onClick={e => setPage(page+1)}>{page+1}</button>}
+        {page <= (maxPage-2) && <button className={styles['pagination-button']} onClick={e => setPage(page+2)}>{page+2}</button>}
+        {page <= (maxPage-1) && <button className={styles['pagination-button']} onClick={e => setPage(page+1)}>Next&nbsp;&gt;</button>}
+        {page != maxPage && <button className={styles['pagination-button']} onClick={e => setPage(maxPage)}>Last</button>}
+      </center>
+      }
       <div className={styles['item-container']}>
-        {items.map(p =>
+        {paginatedItems.map(p =>
           <ProductCard key={p.id} product={p}/>
         )}
       </div>
+      {filteredItems.length > 0 &&
+      <center>
+        {page != 1 && <button className={styles['pagination-button']} onClick={e => setPage(1)}>First</button>}
+        {page >= 2 && <button className={styles['pagination-button']} onClick={e => setPage(page-1)}>&lt;&nbsp;Prev</button>}
+        {page >= 3 && <button className={styles['pagination-button']} onClick={e => setPage(page-2)}>{page-2}</button>}
+        {page >= 2 && <button className={styles['pagination-button']} onClick={e => setPage(page-1)}>{page-1}</button>}
+        <button className={styles['pagination-button-cur']}>{page}</button>
+        {page <= (maxPage-1) && <button className={styles['pagination-button']} onClick={e => setPage(page+1)}>{page+1}</button>}
+        {page <= (maxPage-2) && <button className={styles['pagination-button']} onClick={e => setPage(page+2)}>{page+2}</button>}
+        {page <= (maxPage-1) && <button className={styles['pagination-button']} onClick={e => setPage(page+1)}>Next&nbsp;&gt;</button>}
+        {page != maxPage && <button className={styles['pagination-button']} onClick={e => setPage(maxPage)}>Last</button>}
+      </center>
+      }
       {loading ?  <div className={styles['text-center']}>Fetching products..</div> : "" }
-      {noData ? <div className={styles['text-center']}>No result found for your search</div> : "" }
+      {paginatedItems.length <= 0 ? <div className={styles['text-center']}>No result found for your search</div> : "" }
     </div>
   )
 }

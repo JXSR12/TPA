@@ -1,0 +1,51 @@
+type TransactionHeader {
+  id: ID!
+  date: Time!
+  user: User! @goField(forceResolver: true)
+  shipment: Shipment! @goField(forceResolver: true)
+  paymentMethod: PaymentMethod! @goField(forceResolver: true)
+  status: String!
+  address: Address! @goField(forceResolver: true)
+
+  transactionDetails: [TransactionDetail!]! @goField(forceResolver: true)
+}
+
+type TransactionDetail {
+  transactionHeader: TransactionHeader! @goField(forceResolver: true)
+  product: Product! @goField(forceResolver: true)
+  quantity: Int!
+  notes: String!
+}
+
+type Shipment{
+  id: ID!
+  name: String!
+  fee: Float!
+}
+
+type PaymentMethod {
+  id: ID!
+  name: String!
+}
+
+type CreditVoucher {
+  id: ID!
+  value: Float!
+  valid: Boolean!
+}
+
+extend type Query {
+  shipmentType(id: ID!): Shipment!
+  shipmentTypes: [Shipment!]!
+
+  paymentMethod(id: ID!): PaymentMethod!
+  paymentMethods: [PaymentMethod!]!
+
+  transactionHeaders: [TransactionHeader!]!
+  userOrders: [TransactionHeader!]! @auth
+}
+
+extend type Mutation {
+  checkoutCart(shipmentTypeID: ID!, paymentMethodID: ID!, addressID: ID!, distance: Float!): TransactionHeader! @auth
+  redeemVoucher(id: ID!): CreditVoucher! @auth
+}

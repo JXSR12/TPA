@@ -18,8 +18,8 @@ type User{
   banned: Boolean!
   role: UserRole!
   mailing: Boolean!
+  creditBalance: Float!
 }
-
 
  input NewUser{
   name: String!
@@ -46,6 +46,7 @@ type Mutation {
     auth: AuthOps! @goField(forceResolver: true)
     updateUser(input: ChangeUser!): User! @auth
     updateUserPassword(oldpassword: String!, newpassword: String!): User! @auth
+    createUser(input: NewUser!): Any! @auth
 }
 
 

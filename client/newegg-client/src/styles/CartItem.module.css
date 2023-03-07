@@ -62,7 +62,8 @@
 .subtotal:before,
 .subtotal-value:before,
 .total-value:before,
-.promo-value:before {
+.promo-value:before,
+.shipping-value:before {
   content: '$';
 }
 
@@ -91,6 +92,10 @@
 
 .basket {
   width: 60%;
+}
+
+.basket-wishlist{
+  width: 70% I !important;
 }
 
 .basket-module {
@@ -274,26 +279,37 @@
 .total-title,
 .total-value,
 .promo-title,
-.promo-value {
+.shipping-title,
+.promo-value,
+.shipping-value {
   color: #eee;
   float: left;
   width: 50%;
 }
 
-.summary-promo {
+.summary-promo,
+.summary-shipping {
   -webkit-transition: all .3s ease;
   -moz-transition: all .3s ease;
   -o-transition: all .3s ease;
   transition: all .3s ease;
 }
 
-.promo-title {
+.promo-title,
+.shipping-title {
   float: left;
   width: 70%;
 }
 
 .promo-value {
   color: #8B0000;
+  float: left;
+  text-align: right;
+  width: 30%;
+}
+
+.shipping-value {
+  color: #efd551;
   float: left;
   text-align: right;
   width: 30%;
@@ -327,6 +343,32 @@
   width: 100%;
 }
 
+.backhome-cta {
+  display: block;
+  float: none;
+  font-size: 1rem;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 0.625rem 0;
+  width: 50%;
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  -ms-transform: translate(-50%, 0%);
+  transform: translate(-50%, 0%);
+}
+
+.address-cta {
+  background-color: #f8663d;
+  display: block;
+  float: none;
+  font-size: 0.6rem;
+  text-align: center;
+  text-transform: uppercase;
+  padding: 0.625rem 0;
+  width: 100%;
+}
+
 .summary-delivery-selection {
   background-color: #ccc;
   border: 1px solid #aaa;
@@ -335,6 +377,54 @@
   font-size: 0.625rem;
   height: 34px;
   width: 100%;
+}
+
+.empty-cart-container{
+  width: 96%;
+}
+
+.empty-cart{
+  width: 100%;
+  display: block;
+  text-align: center;
+}
+
+.comment-container{
+  overflow: auto;
+}
+
+.comment-box{
+  padding: 0.3em;
+  background-color: #e9820c;
+  border-radius: 5px;
+  margin-bottom: 1em;
+}
+
+.comment-content{
+  padding: 1em;
+  background-color: #444;
+  border-radius: 10px;
+}
+
+.comment-btn{
+  margin-bottom: 1em;
+  border-radius: 10px;
+}
+
+.navlinks{
+  font-size: 1.2em;
+}
+
+@media screen and (min-width: 1280px) {
+  .comment-box{
+    width: 100%;
+    float: right;
+  }
+
+  .comment-btn{
+    width: 100%;
+    float: right;
+  }
 }
 
 @media screen and (max-width: 1280px) {

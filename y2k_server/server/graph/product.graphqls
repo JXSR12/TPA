@@ -11,6 +11,7 @@ type Product {
   metadata: String!
   createdAt: Time!
   validTo: Time
+  shop: Shop! @goField(forceResolver: true)
   group: ProductGroup! @goField(forceResolver: true)
   brand: ProductBrand! @goField(forceResolver: true)
 
@@ -45,6 +46,7 @@ extend type Query {
   categories(limit: Int): [Category!]!
   product(id: ID!): Product!
   products(shopID: ID, limit: Int, offset: Int, input: SearchProduct, topSold: Boolean): [Product!]!
+  brands(topSold: Boolean!): [ProductBrand!]!
 }
 
 extend type Mutation {

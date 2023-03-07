@@ -1,0 +1,141 @@
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-show{
+  display: block;
+  position: fixed;
+  z-index: 1;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #262626;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 40%;
+}
+
+.address-list{
+  height: 30vh;
+  max-height: 30vh;
+  overflow-y: scroll;
+}
+
+.address-list-full{
+  height: 80vh;
+  max-height: 80vh;
+  border-radius: 20px;
+}
+
+.display-on-hover{
+  display: none;
+}
+
+.address-box:has(.display-on-hover):hover .display-on-hover{
+  display: block;
+}
+
+.grid-item:has(.display-on-hover):hover .display-on-hover{
+  display: block;
+}
+
+.background-lighten{
+  background-color: rgba(255, 255, 255, 0.238);
+}
+
+.padding-a-bit{
+  padding: 2em;
+}
+
+.address-box{
+  width: 95%;
+  padding: 2em;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.address-box:hover{
+  background-color: #000;
+  transition: 0.3s;
+}
+
+.address-box-delete{
+  border-radius: 5px;
+  padding: 5px;
+  font-size: 25px;
+}
+
+.address-box-delete:hover{
+  fill: #fa4040;
+  transform: scale(1.4);
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.checkbox-container{
+  overflow-y: auto;
+  margin-bottom: 2em;
+  padding: 1em;
+}
+
+.checkbox-wishlist{
+  font-size: 20px;
+
+}
+
+.checkbox-wishlist-div{
+  font-size: 20px;
+  margin-bottom: 0.5em;
+}
+
+.close {
+  color: #d5d5d5;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.modal-div{
+  width: 95%;
+}
+
+.modal-div-dotted{
+  border-top: 2px dotted #bbb;
+  border-bottom: none;
+}
+
+.close:hover,
+.close:focus {
+  color: #ffb23e;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 1024px) {
+  .modal-content {
+    width: 90%;
+  }
+
+  .display-on-hover{
+    display: block;
+  }
+}

@@ -34,6 +34,8 @@
     "react-dom": "18.2.0",
     "react-icons": "4.7.1",
     "react-localization": "1.0.19",
+    "socket.io": "4.6.1",
+    "socket.io-client": "4.6.1",
     "use-mouse-move": "1.0.1",
     "validator": "13.9.0"
   },

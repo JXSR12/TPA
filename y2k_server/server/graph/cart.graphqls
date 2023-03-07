@@ -15,6 +15,7 @@ type Wishlist {
   title: String!
   type: WishlistType!
   user: User! @goField(forceResolver: true)
+  items: [WishlistItem!]! @goField(forceResolver: true)
 }
 
 type WishlistItem {
@@ -22,11 +23,29 @@ type WishlistItem {
   product: Product! @goField(forceResolver: true)
 }
 
+type WishlistFollowing{
+  wishlist: Wishlist! @goField(forceResolver: true)
+  user: User! @goField(forceResolver: true)
+}
+
+type WishlistComment{
+  id: ID!
+  date: Time!
+  content: String!
+  wishlist: Wishlist! @goField(forceResolver: true)
+  user: User! @goField(forceResolver: true)
+}
+
 extend type Query {
   cart(productID: ID!): Cart! @auth
   carts: [Cart!]! @auth
 
-  wishlists: [Wishlist!]!
+  wishlist(id: ID!): Wishlist!
+  wishlists: [Wishlist!]! @auth
+  publicWishlists: [Wishlist!]!
+  followedWishlists: [Wishlist!]! @auth
+  wishlistFollowers(wishlistId: ID!): [User!]!
+  wishlistComments(wishlistId: ID!): [WishlistComment!]!
 }
 
 extend type Mutation {
@@ -34,8 +53,12 @@ extend type Mutation {
   updateCart(productID: ID!, quantity: Int!, notes: String!): Cart! @auth
   deleteCart(productID: ID!): Boolean! @auth
 
+  createWishlistComment(wishlistId: ID!, content: String): WishlistComment! @auth
+  followWishlist(wishlistId: ID!): Wishlist! @auth
   createWishlist(title: String!, type: WishlistType!): Wishlist! @auth
   createWishlistItem(wishlistId: ID!, productId: ID!): WishlistItem! @auth
+  updateWishlist(id: ID!, title: String!, type: WishlistType!): Wishlist! @auth
   deleteWishlist(id: ID!): Boolean! @auth
   deleteWishlistItem(wishlistId: ID!, productId: ID!): Boolean! @auth
+  duplicateWishlistItems(sourceId: ID!, destinationId: ID!): Wishlist! @auth
 }

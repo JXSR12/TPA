@@ -8,12 +8,13 @@ import Router from 'next/router';
 import { useSessionStorage } from 'usehooks-ts'
 import { HydrationProvider, Server, Client } from "react-hydration-provider";
 import axios from 'axios';
-import { GETUSER_QUERY, GRAPHQL_API, USERS_QUERY } from '@/utils/constants';
+import { CARTPRODUCTS_QUERY, GETUSER_QUERY, GRAPHQL_API, USERS_QUERY } from '@/utils/constants';
 import { User } from '@/interfaces/user';
 import React from 'react';
 import { GiHamburgerMenu } from 'react-icons/gi'
 import { IoMdClose } from 'react-icons/io'
 import { IoPersonCircleSharp } from 'react-icons/io5'
+import { CartItem } from '@/interfaces/cart';
 
 export default function Navbar(){
   const [ jwtToken, setJwtToken ] = useSessionStorage('jwtToken', 'NULL');
@@ -21,6 +22,11 @@ export default function Navbar(){
   const [ searchQuery, setSearchQuery ] = React.useState<string>("");
   const [ mobile, setMobile ] = React.useState<boolean>(false);
   const [ userName, setUserName ] = React.useState<string>("My Profile");
+
+  const [ items, setItems ] = React.useState<CartItem[]>([]);
+  const [subtotalPrice, setSubtotalPrice] = React.useState<number>(0);
+  const [promoPrice, setPromoPrice] = React.useState<number>(0);
+  const [totalPrice, setTotalPrice] = React.useState<number>(0);
 
   const getUser = () => {
     axios.post(GRAPHQL_API, {
@@ -58,7 +64,38 @@ export default function Navbar(){
 
   React.useEffect(() => {
     getUser()
+    retrieveItems()
   }, [jwtToken]);
+
+  const retrieveItems = () => {
+      axios.post(GRAPHQL_API, {
+        query: CARTPRODUCTS_QUERY
+      },
+      {
+        headers: {
+          Authorization: "Bearer " + jwtToken
+        }
+      }
+      ).then(res => {
+        setItems(res.data.data.carts)
+      }).catch(err => {
+        console.log("Error retrieving products")
+      })
+  }
+
+  React.useEffect(() => {
+    var subtotal = 0;
+    var promo = 0;
+    var total = 0;
+    items.forEach(e => {
+      subtotal += (e.product.price * e.quantity);
+      promo +=(e.product.price * e.product.discount / 100);
+    });
+
+      setSubtotalPrice(subtotal);
+      setPromoPrice(promo);
+      setTotalPrice(subtotal - promo);
+  }, [items])
 
   return(
     <HydrationProvider>
@@ -66,15 +103,12 @@ export default function Navbar(){
       <div className={styles['container']}>
       <header data-thq="thq-navbar" className={styles['navbar-interactive']}>
 
-      {/* + (mobile ? `${styles['desktop-inactive']}` : "") */}
-
-
         <div
           data-thq="thq-navbar-nav"
           data-role="Nav"
           className={`${styles['desktop-menu']}`}
         >
-          <a href='/'>
+          <a className={styles['homelink']} onClick={e => Router.push('/')}>
           <Image
               src="/logo.svg"
               alt="Logo"
@@ -98,11 +132,12 @@ export default function Navbar(){
             <Link href={jwtToken !== 'NULL' ? "/" : "/login"} className={styles['navlink']}>
               Select Address
             </Link>
-            <Link href={jwtToken !== 'NULL' ? "/" : "/login"} className={styles['navlink']}>
+            <Link href={jwtToken !== 'NULL' ? "/order" : "/login"} className={styles['navlink']}>
               Returns &amp; Orders
             </Link>
             <Link href={jwtToken !== 'NULL' ? "/cart" : "/login"} className={styles['navlink']}>
-              <span>Cart</span>
+              <span>My Cart </span>
+              <span>${totalPrice.toFixed(2)}</span>
               <br></br>
             </Link>
 
@@ -116,7 +151,7 @@ export default function Navbar(){
         </div>
 
 
-        <Link href={jwtToken !== 'NULL' ? "/profile" : "/login"} className={styles['username']}>
+        <Link href={jwtToken !== 'NULL' ? "/dashboard" : "/login"} className={styles['username']}>
               <IoPersonCircleSharp/> &nbsp; {userName}
         </Link>
 
@@ -165,11 +200,12 @@ export default function Navbar(){
               <Link href={jwtToken !== 'NULL' ? "/" : "/login"} className={styles['text-m']}>
                 Select Address
               </Link>
-              <Link href={jwtToken !== 'NULL' ? "/" : "/login"} className={styles['text-m']}>
+              <Link href={jwtToken !== 'NULL' ? "/order" : "/login"} className={styles['text-m']}>
                 Returns &amp; Orders
               </Link>
               <Link href={jwtToken !== 'NULL' ? "/cart" : "/login"} className={styles['text-m']}>
-                <span>Cart</span>
+                <span>My Cart </span>
+                <span>(${totalPrice.toFixed(2)})</span>
               </Link>
             </nav>
           </div>

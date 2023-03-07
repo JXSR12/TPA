@@ -4,6 +4,7 @@ type Shop {
   address: String!
   description: String!
   profilePic: String!
+  banner: String!
 
   user: User! @goField(forceResolver: true)
   products(keyword: String, topSold: Boolean): [Product!]! @goField(forceResolver: true)
@@ -24,4 +25,6 @@ input NewShop {
   address: String!
   description: String!
   profilePic: String!
+  banner: String!
+
 }

@@ -19,6 +19,10 @@ import (
 
 const defaultPort = "8080"
 
+var allowOriginFunc = func(r *http.Request) bool {
+	return true
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -37,6 +41,17 @@ func main() {
 	db.AutoMigrate(&model.Cart{})
 	db.AutoMigrate(&model.Wishlist{})
 	db.AutoMigrate(&model.WishlistItem{})
+	db.AutoMigrate(&model.TransactionHeader{})
+	db.AutoMigrate(&model.TransactionDetail{})
+	db.AutoMigrate(&model.Address{})
+	db.AutoMigrate(&model.Shipment{})
+	db.AutoMigrate(&model.PaymentMethod{})
+	db.AutoMigrate(&model.CreditVoucher{})
+	db.AutoMigrate(&model.ReviewCredit{})
+	db.AutoMigrate(&model.WishlistFollowing{})
+	db.AutoMigrate(&model.WishlistComment{})
+	// db.AutoMigrate(&model.Message{})
+	// db.AutoMigrate(&model.Chat{})
 
 	router := mux.NewRouter()
 
@@ -59,5 +74,6 @@ func main() {
 
 	log.Printf("Go to http://localhost:%s/ for GraphQL playground", port)
 	log.Printf("API Endpoint: http://localhost:%s/query", port)
+
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }

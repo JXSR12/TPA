@@ -18,6 +18,12 @@ type ChangeUser struct {
 	Phone string `json:"phone"`
 }
 
+type CreditVoucher struct {
+	ID    string  `json:"id"`
+	Value float64 `json:"value"`
+	Valid bool    `json:"valid"`
+}
+
 type NewProduct struct {
 	Name        string  `json:"name"`
 	Description string  `json:"description"`
@@ -34,6 +40,7 @@ type NewShop struct {
 	Address     string `json:"address"`
 	Description string `json:"description"`
 	ProfilePic  string `json:"profilePic"`
+	Banner      string `json:"banner"`
 }
 
 type NewUser struct {
