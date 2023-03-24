@@ -17,3 +17,10 @@ func ShopGetByUserID(ctx context.Context, userID string) (*model.Shop, error) {
 
 	return &shop, nil
 }
+
+func GetStringOrDefault(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

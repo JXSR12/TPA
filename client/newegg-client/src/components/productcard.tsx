@@ -1,10 +1,11 @@
 import { Product } from '@/interfaces/product';
 import styles from '@/styles/CardGrid.module.css';
+import actionStyles from '@/styles/Profile.module.scss'
 import Image from 'next/image';
-import { FaStar } from 'react-icons/fa';
+import { FaEdit, FaStar, FaTrash } from 'react-icons/fa';
 
-export default function ProductCard(props: {product: Product}){
-  const { product } = props;
+export default function ProductCard(props: {product: Product, editMode?: boolean, onUpdateClick?: any, onDeleteClick?: any}){
+  const { product, editMode, onUpdateClick, onDeleteClick} = props;
 
   const price_before = product.price
   const price_after = product.price - (product.discount * product.price / 100)
@@ -24,7 +25,7 @@ export default function ProductCard(props: {product: Product}){
   }
 
   return(
-    <div className={styles['goods-container']}>
+    <div className={`${styles['goods-container']} ${editMode ? styles['goods-container-shortimg'] : ''}`}>
       <a href={"/product/" + product.id} className={styles['goods-img']}>
       <a href={"/product/" + product.id} className={styles['goods-img']}>
         <img src={product.images[0].image} title={product.name} alt={product.name}/>
@@ -42,10 +43,18 @@ export default function ProductCard(props: {product: Product}){
             <span className={styles['goods-price-symbol']}>$</span>
             <span className={styles['goods-price-value']}><strong>{price_after_front}</strong><sup>.{price_after_back}</sup></span>
           </div>
-          {product.discount > 0 && <div className={styles['goods-price-was']}>${price_before_front}.{price_before_back}</div>}
+          <div className={styles['goods-price-was']}>{product.discount > 0 ? price_before_front + '.' + price_before_back : ''}&nbsp;</div>
         </div>
       </div>
       </a>
+      {editMode &&
+          <div className={`${actionStyles['actions']} ${actionStyles['actions-single']}`}>
+            <a id="save" className={`${actionStyles['lx-btn']} ${actionStyles['save']}`} onClick={onUpdateClick}><FaEdit/>&nbsp;&nbsp;Update Product</a>
+            &nbsp;
+            <a id="delete" className={`${actionStyles['lx-btn']} ${actionStyles['clear']}`} onClick={onDeleteClick}><FaTrash/>&nbsp;&nbsp;Delete Product</a>
+            &nbsp;
+          </div>
+        }
     </div>
   )
 }

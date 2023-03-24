@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { Inter } from '@next/font/google';
 import styles from '../styles/Profile.module.scss'
 import utilStyles from '@/styles/Utils.module.css';
+import actionStyles from '@/styles/Profile.module.scss'
 import listStyles from '@/styles/Modal.module.css';
 import searchStyles from '@/styles/SearchBar.module.css'
 import Link from 'next/link';
@@ -35,6 +36,10 @@ export default function OrdersPage() {
   const [ searchQuery, setSearchQuery ] = React.useState<string>("");
   const [ showError, setShowError ] = React.useState<boolean>(false);
   const [ showSuccess, setShowSuccess ] = React.useState<boolean>(false);
+
+  const [ orderFilter, setOrderFilter ] = React.useState<string>("Any");
+
+  const [ orderPeriod, setOrderPeriod ] = React.useState<string>("Any");
 
   const handleSearchChange = (event: React.ChangeEvent<{ value: string }>) => {
     setSearchQuery(event.target.value);
@@ -71,11 +76,35 @@ export default function OrdersPage() {
 
   const [ filteredOrders, setFilteredOrders ] = React.useState<TransactionHeader[]>([])
 
+  const handleFilterChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setOrderFilter(event.target.value);
+  }
+
+  const handlePeriodChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setOrderPeriod(event.target.value);
+  }
+
   React.useEffect(() => {
-    setFilteredOrders(orders.filter(e => {
-      return JSON.stringify(e).toLowerCase().includes(searchQuery.toLowerCase())
+    setFilteredOrders(orders?.filter(e => {
+      let statusFilterPassed = true;
+      if (orderFilter !== "Any") {
+        statusFilterPassed = e.status.toUpperCase() === orderFilter.toUpperCase();
+      }
+      let dateFilterPassed = true;
+      if (orderPeriod !== "Any") {
+        const currentDate = new Date();
+        const orderDate = new Date(e.date);
+        if (orderPeriod === "Today") {
+          dateFilterPassed = Math.abs(currentDate.getTime() - orderDate.getTime()) < 24 * 60 * 60 * 1000;
+        } else if (orderPeriod === "Recent") {
+          dateFilterPassed = Math.abs(currentDate.getTime() - orderDate.getTime()) < 7 * 24 * 60 * 60 * 1000;
+        } else if (orderPeriod === "This Month") {
+          dateFilterPassed = (currentDate.getMonth() === orderDate.getMonth()) && (currentDate.getFullYear() === orderDate.getFullYear());
+        }
+      }
+      return JSON.stringify(e).toLowerCase().includes(searchQuery.toLowerCase()) && statusFilterPassed && dateFilterPassed;
     }))
-  }, [orders, searchQuery])
+    }, [orders, searchQuery, orderFilter, orderPeriod])
 
   const retrieveOrders = () => {
       axios.post(GRAPHQL_API, {
@@ -87,6 +116,8 @@ export default function OrdersPage() {
         }
       }
       ).then(res => {
+        console.log(jwtToken)
+        console.log(res.data)
         setOrders(res.data.data.userOrders)
       }).catch(err => {
         console.log("Error retrieving orders")
@@ -138,6 +169,19 @@ export default function OrdersPage() {
               <h1 className={styles['title']}>My Order History</h1>
             </div>
             <br/>
+            <select name="select-content" value={orderFilter} className={`${actionStyles['select-content']} ${styles['w-20']}`} onChange={handleFilterChange}>
+              <option value="Any" selected>Any Status</option>
+              <option value="Open" selected>Open</option>
+              <option value="Cancelled" selected>Cancelled</option>
+              <option value="Completed" selected>Completed</option>
+            </select>
+            <select name="select-content" value={orderPeriod} className={`${actionStyles['select-content']} ${styles['w-20']}`} onChange={handlePeriodChange}>
+              <option value="Any" selected>Any Period</option>
+              <option value="Today" selected>Today (24h)</option>
+              <option value="Recent" selected>Recent (7d)</option>
+              <option value="This Month" selected>This Month (30d)</option>
+            </select>
+            <br/>
             <div className={searchStyles['search-form-order']} role="search">
               <label htmlFor='search' className={searchStyles['label']}>Search</label>
               <input className={searchStyles['input-order']} id="search" type="search" onChange={handleSearchChange} placeholder="Search by product name, order ID, etc.." autoFocus required />
@@ -147,7 +191,7 @@ export default function OrdersPage() {
             <div className={`${styles['lx-row']} ${styles['align-stretch']}`}>
                 <div className={`${styles['lx-column']} ${styles['column-orders']}`}>
                   <div className={`${listStyles['address-list']} ${listStyles['address-list-full']} ${listStyles['background-lighten']} ${listStyles['padding-a-bit']}`}>
-                    {filteredOrders.map(e =>
+                    {filteredOrders?.map(e =>
                       <div key={e.id} className={`${listStyles['address-box']}`}>
                         <h5>
                           Order ID: {e.id}
@@ -170,12 +214,19 @@ export default function OrdersPage() {
                         </div>
                         </center>
                       </div>)}
+                      {
+                        (!filteredOrders || filteredOrders.length <= 0) && <center><h3>You haven't made any orders yet</h3></center>
+                      }
                   </div>
                 </div>
                 <br/>
                 <br/>
                 <div className={`${styles['lx-column']} ${styles['column-orders']}`}>
-
+                  <a href={'/reviewproducts'}>View Reviewable Products</a>
+                  &nbsp;
+                  |
+                  &nbsp;
+                  <a href={'/reviews'}>View All My Reviews</a>
                 </div>
                 <div id={utilStyles['error-snackbar']} className={showError ? utilStyles['show'] : ''}>Error occured while trying to add items to cart</div>
                 <div id={utilStyles['success-snackbar']} className={showSuccess ? utilStyles['show'] : ''}>Successfully added all order items to cart!</div>

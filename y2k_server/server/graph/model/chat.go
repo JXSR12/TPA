@@ -6,7 +6,7 @@ import (
 
 type Chat struct {
 	ID       string     `json:"ID"`
-	Users    []*User    `json:"users"`
+	Users    []*User    `json:"users" gorm:"many2many:user_chats;"`
 	Messages []*Message `json:"messages"`
 }
 
@@ -14,9 +14,9 @@ type Message struct {
 	ID      string `json:"ID"`
 	Content string `json:"Content"`
 	User    *User  `json:"User"`
-	UserID  string `json:"userID" gorm:"size:191;primaryKey"`
+	UserID  string `json:"-"`
 	Chat    *Chat  `json:"Chat"`
-	ChatID  string `json:"chatID" gorm:"size:191;primaryKey"`
+	ChatID  string `json:"chatID"`
 	FileURL string `json:"FileURL"`
 }
 

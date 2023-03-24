@@ -204,9 +204,24 @@ func (r *mutationResolver) CreateWishlist(ctx context.Context, title string, typ
 // CreateWishlistItem is the resolver for the createWishlistItem field.
 func (r *mutationResolver) CreateWishlistItem(ctx context.Context, wishlistID string, productID string) (*model.WishlistItem, error) {
 	db := config.GetDB()
-	if ctx.Value("auth") == nil {
+
+	auth := ctx.Value("auth")
+	if auth == nil {
 		return nil, &gqlerror.Error{
 			Message: "Error, token gaada",
+		}
+	}
+
+	userID := auth.(*service.JwtCustomClaim).ID
+
+	wishlist := &model.Wishlist{}
+	if err := db.First(wishlist, "id = ?", wishlistID).Error; err != nil {
+		return nil, err
+	}
+
+	if wishlist.UserID != userID {
+		return nil, &gqlerror.Error{
+			Message: "Unauthorized",
 		}
 	}
 
@@ -267,9 +282,17 @@ func (r *mutationResolver) DeleteWishlist(ctx context.Context, id string) (bool,
 		}
 	}
 
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
 	model := new(model.Wishlist)
 	if err := db.First(model, "id = ?", id).Error; err != nil {
 		return false, err
+	}
+
+	if model.UserID != userID {
+		return false, &gqlerror.Error{
+			Message: "Error, not authorized to delete this wishlist",
+		}
 	}
 
 	return true, db.Delete(model).Error
@@ -281,6 +304,17 @@ func (r *mutationResolver) DeleteWishlistItem(ctx context.Context, wishlistID st
 	if ctx.Value("auth") == nil {
 		return false, &gqlerror.Error{
 			Message: "Error, token gaada",
+		}
+	}
+
+	// Check if the authenticated user is the owner of the wishlist
+	wishlist := new(model.Wishlist)
+	if err := db.First(wishlist, "id = ?", wishlistID).Error; err != nil {
+		return false, err
+	}
+	if wishlist.UserID != ctx.Value("auth").(*service.JwtCustomClaim).ID {
+		return false, &gqlerror.Error{
+			Message: "Error, user is not authorized to delete wishlist item",
 		}
 	}
 

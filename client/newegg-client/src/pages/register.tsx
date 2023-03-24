@@ -84,36 +84,54 @@ export default function Register() {
     setInputMailing(!inputMailing);
   }
   const handleSubmit = (e: any) => {
-    if(!validator.isEmail(inputEmail) || !validator.isMobilePhone(inputPhone) || inputPassword.length < 8 || inputName.length < 5){
-      setShowError(true)
-      setTimeout(() => {setShowError(false)}, 2500)
-      return
+    if (
+      !validator.isEmail(inputEmail) ||
+      !validator.isMobilePhone(inputPhone) ||
+      inputPassword.length < 8 ||
+      inputName.length < 5
+    ) {
+      setShowError(true);
+      setTimeout(() => {
+        setShowError(false);
+      }, 2500);
+      return;
     }
 
-    axios.post(GRAPHQL_API, {
-      query: REGISTER_QUERY,
-      variables: {
-        name: inputName,
-        email: inputEmail,
-        phone: inputPhone,
-        password: inputPassword,
-        banned: false,
-        role: "USER",
-        mailing: inputMailing
-      }
-    }).then(res => {
-      Router.push('/login')
-      console.log(res.data.data.auth.register.token)
-    })
-    .catch(err => {
-      console.log(inputName, inputEmail, inputPhone, inputPassword)
-      setShowError(true)
-      setTimeout(() => {setShowError(false)}, 2500)
-      console.log(err)
-    })
+    axios
+      .post(GRAPHQL_API, {
+        query: REGISTER_QUERY,
+        variables: {
+          name: inputName,
+          email: inputEmail,
+          phone: inputPhone,
+          password: inputPassword,
+          banned: false,
+          role: "USER",
+          mailing: inputMailing,
+        },
+      })
+      .then((res) => {
+        if (res.data.errors) {
+          setShowError(true);
+          setTimeout(() => {
+            setShowError(false);
+          }, 2500);
+        } else {
+          Router.push("/login");
+          console.log(res.data.data.auth.register.token);
+        }
+      })
+      .catch((err) => {
+        console.log(inputName, inputEmail, inputPhone, inputPassword);
+        setShowError(true);
+        setTimeout(() => {
+          setShowError(false);
+        }, 2500);
+        console.log(err);
+      });
 
-    e.preventDefault()
-  }
+    e.preventDefault();
+  };
 
   return (
     <>

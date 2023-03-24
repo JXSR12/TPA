@@ -1,6 +1,6 @@
 import { Product } from '@/interfaces/product';
 import styles from '@/styles/CardGrid.module.css';
-import { ALLPRODUCTS_QUERY, GRAPHQL_API, USERS_QUERY } from '@/utils/constants';
+import { ALLPRODUCTS_QUERY, GRAPHQL_API, RECOMMENDEDPRODUCTS_QUERY, USERS_QUERY } from '@/utils/constants';
 import axios from 'axios';
 import React from 'react';
 import { useSessionStorage } from 'usehooks-ts';
@@ -26,6 +26,7 @@ export default function Recommendations(){
         query: ALLPRODUCTS_QUERY(6, page*6)
       }
       ).then(res => {
+        console.log(res.data)
         var newPage = page + 1
         setPage(newPage)
         var newItems = items.concat(res.data.data.products);

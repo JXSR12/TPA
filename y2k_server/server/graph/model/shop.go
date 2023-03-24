@@ -10,4 +10,5 @@ type Shop struct {
 	User        *User      `json:"user"`
 	UserID      string     `json:"userID" gorm:"size:191"`
 	Products    []*Product `json:"products"`
+	Password    string     `json:"password"`
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import styles from '@/styles/Carousel.module.css'
 import { BiLeftArrow, BiRightArrow } from 'react-icons/bi'
 
-export type ImageType = { id: number; url: string }
+export type ImageType = { id: string; url: string }
 
 const Carousel: React.FC<{ images?: ImageType[] }> = ({ images }) => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)

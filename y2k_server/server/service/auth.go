@@ -9,12 +9,12 @@ import (
 )
 
 func UserRegister(ctx context.Context, input model.NewUser) (interface{}, error) {
-	_, err := UserGetByEmail(ctx, input.Email)
-	if err == nil {
-		if err != gorm.ErrRecordNotFound {
-			return nil, err
-		}
-	}
+	// _, err := UserGetByEmail(ctx, input.Email)
+	// if err == nil {
+	// 	if err != gorm.ErrRecordNotFound {
+	// 		return nil, err
+	// 	}
+	// }
 
 	createdUser, err := UserCreate(ctx, input)
 	if err != nil {

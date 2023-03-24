@@ -24,6 +24,12 @@ func (r *addressResolver) User(ctx context.Context, obj *model.Address) (*model.
 
 // CreateAddress is the resolver for the createAddress field.
 func (r *mutationResolver) CreateAddress(ctx context.Context, name string, content string, primary bool) (*model.Address, error) {
+	if name == "" || content == "" {
+		return nil, &gqlerror.Error{
+			Message: "Name and content cannot be empty",
+		}
+	}
+
 	db := config.GetDB()
 	if ctx.Value("auth") == nil {
 		return nil, &gqlerror.Error{
@@ -103,8 +109,16 @@ func (r *queryResolver) Address(ctx context.Context, id string) (*model.Address,
 func (r *queryResolver) Addresses(ctx context.Context) ([]*model.Address, error) {
 	db := config.GetDB()
 
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
 	var models []*model.Address
-	return models, db.Find(&models).Error
+	return models, db.Where("user_id = ?", userID).Find(&models).Error
 }
 
 // Address returns AddressResolver implementation.

@@ -31,6 +31,11 @@ func (r *messageResolver) Chat(ctx context.Context, obj *model.Message) (*model.
 	panic(fmt.Errorf("not implemented: Chat - Chat"))
 }
 
+// ImageURL is the resolver for the ImageURL field.
+func (r *messageResolver) ImageURL(ctx context.Context, obj *model.Message) (*string, error) {
+	panic(fmt.Errorf("not implemented: ImageURL - ImageURL"))
+}
+
 // Chat returns ChatResolver implementation.
 func (r *Resolver) Chat() ChatResolver { return &chatResolver{r} }
 

@@ -36,11 +36,12 @@ type NewProduct struct {
 }
 
 type NewShop struct {
-	Name        string `json:"name"`
-	Address     string `json:"address"`
-	Description string `json:"description"`
-	ProfilePic  string `json:"profilePic"`
-	Banner      string `json:"banner"`
+	Name        string  `json:"name"`
+	Address     string  `json:"address"`
+	Description string  `json:"description"`
+	ProfilePic  string  `json:"profilePic"`
+	Banner      string  `json:"banner"`
+	Password    *string `json:"password"`
 }
 
 type NewUser struct {
@@ -61,6 +62,13 @@ type ProductBrand struct {
 
 type ProductGroup struct {
 	ID string `json:"id"`
+}
+
+type PromotionBanner struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	Link  string `json:"link"`
+	Image string `json:"image"`
 }
 
 type SearchProduct struct {

@@ -7,7 +7,7 @@ import Navbar from '@/components/navbar';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import axios from 'axios';
-import { ADDTOCART_QUERY, ADDTOWISHLIST_QUERY, CREATEWISHLIST_QUERY, DELETEFROMWISHLIST_QUERY, DELETEWISHLIST_QUERY, DUPLICATEWISHLISTITEMS_QUERY, FOLLOWWISHLIST_QUERY, GETUSER_QUERY, GRAPHQL_API, SIMILARPRODUCTS_QUERY, SINGLEPRODUCT_QUERY, SINGLESHOP_QUERY, SINGLEWISHLIST_QUERY, USERWISHLISTS_QUERY, WISHLISTCOMMENTS_QUERY, WISHLISTFOLLOWERS_QUERY } from '@/utils/constants';
+import { ADDTOCART_QUERY, ADDTOWISHLIST_QUERY, CREATEWISHLIST_QUERY, DELETEFROMWISHLIST_QUERY, DELETEWISHLIST_QUERY, DUPLICATEWISHLISTITEMS_QUERY, FOLLOWWISHLIST_QUERY, GETUSER_QUERY, GRAPHQL_API, RECOMMENDEDPRODUCTS_QUERY, SHOPAVGRATING_QUERY, SHOPITEMSSOLD_QUERY, SHOPRECOMMENDED_QUERY, SIMILARPRODUCTS_QUERY, SINGLEPRODUCT_QUERY, SINGLESHOP_QUERY, SINGLEWISHLIST_QUERY, USERWISHLISTS_QUERY, WISHLISTCOMMENTS_QUERY, WISHLISTFOLLOWERS_QUERY } from '@/utils/constants';
 import { Product } from '@/interfaces/product';
 import { useSessionStorage } from 'usehooks-ts';
 import { FaCartPlus, FaCopy, FaEdit, FaEye, FaHeart, FaPlusCircle, FaShoppingCart, FaSignInAlt, FaTimesCircle, FaTrash } from 'react-icons/fa';
@@ -32,6 +32,9 @@ export default function ShopAbout(this: any){
 
   const [ selProduct, setSelProduct] = React.useState<Product>({} as Product);
 
+  const [ itemsSold, setItemsSold ] = React.useState<number>(0);
+  const [ avgRating, setAvgRating ] = React.useState<number>(0);
+
   const [ userId, setUserId ] = React.useState<string>("")
 
   const retrieveShop = () => {
@@ -46,6 +49,30 @@ export default function ShopAbout(this: any){
     }).catch(err => {
       console.log("Error retrieving shop")
     })
+}
+
+const retrieveRating = () => {
+  axios.post(GRAPHQL_API, {
+    query: SHOPAVGRATING_QUERY(id)
+  }
+  ).then(res => {
+    console.log(id)
+    setAvgRating(res.data.data.averageRating)
+  }).catch(err => {
+    console.log("Error retrieving shop ratings")
+  })
+}
+
+const retrieveSales = () => {
+  axios.post(GRAPHQL_API, {
+    query: SHOPITEMSSOLD_QUERY(id)
+  }
+  ).then(res => {
+    console.log(id)
+    setItemsSold(res.data.data.itemsSold)
+  }).catch(err => {
+    console.log("Error retrieving shop sales")
+  })
 }
 
 const getUser = () => {
@@ -66,6 +93,8 @@ const getUser = () => {
   React.useEffect(() => {
     retrieveShop()
     getUser()
+    retrieveRating()
+    retrieveSales()
   }, [id])
 
   React.useEffect(() => {
@@ -96,6 +125,8 @@ const getUser = () => {
         <br/>
         <center>This shop is currently being suspended</center>
         <br/>
+        {shop?.user?.id == userId && <center>Please contact OldEgg Support Team via Customer Service to appeal for suspension</center>}
+        <br/>
         <br/>
         <br/>
         <br/>
@@ -125,6 +156,13 @@ const getUser = () => {
             <br/>
             <br/>
           </center>
+          {/* {shop?.user?.id == userId &&
+          <div className={`${actionStyles['actions']}`}>
+            <a id="save" className={`${actionStyles['lx-btn']} ${actionStyles['save']}`} onClick={e => {}}><FaPlusCircle/>&nbsp;&nbsp;Add New Product</a>
+            &nbsp;
+          </div>
+          } */}
+          <br/>
           <hr/>
           <div>
             <center>
@@ -133,34 +171,18 @@ const getUser = () => {
             <a href={'/shop/' + id + '/about'} className={` ${styles['navlinks']}`}>About Us</a>
             &nbsp;|&nbsp;
             <a href={'/shop/' + id + '/products'} className={` ${styles['navlinks']}`}>Products ({shop?.products?.length})</a>
+            &nbsp;|&nbsp;
+            <a href={'/shop/' + id + '/review'} className={` ${styles['navlinks']}`}>Reviews</a>
             </center>
           </div>
           <hr/>
-          {/* {shop?.user?.id == userId ?
-          <div className={`${actionStyles['actions']}`}>
-            <a id="save" className={`${actionStyles['lx-btn']} ${actionStyles['save']}`} onClick={e => {handleUpdateWishlist()}}><FaEdit/>&nbsp;&nbsp;Edit</a>
-            &nbsp;
-            <a id="delete" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={ev => {deleteWishlist()}}><FaTrash/>&nbsp;&nbsp;Delete</a>
-            &nbsp;
-            <a id="view" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={e => addAllToCart(shop.items)}><FaCartPlus/>&nbsp;&nbsp;Add All to Cart</a>
-          </div>
-          :
-          <div className={`${actionStyles['actions']}`}>
-            {false ?
-              <a id="unfollow" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={ev => {followWishlist(shop.id)}}><FaTimesCircle/>&nbsp;&nbsp;Unfollow</a>
-            :
-              <a id="follow" className={`${actionStyles['lx-btn']} ${actionStyles['save']}`} onClick={e => {followWishlist(shop.id)}}><FaPlusCircle/>&nbsp;&nbsp;Follow</a>
-            }
-            &nbsp;
-            <a id="duplicate" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={e => {duplicateWishlist(shop.title, shop.type, shop.id)}}><FaCopy/>&nbsp;&nbsp;Duplicate</a>
-            &nbsp;
-            <a id="view" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={e => addAllToCart(shop.items)}><FaCartPlus/>&nbsp;&nbsp;Add All to Cart</a>
-          </div>
-          } */}
+
           <br/>
         </div>
 
         <center><h2>About Us</h2></center>
+        <br/>
+        <center><h3>{itemsSold} item sales with an average rating of {avgRating/2} / 5</h3></center>
         <br/>
         <center><p>{shop?.description}</p></center>
         <br/>

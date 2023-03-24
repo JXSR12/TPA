@@ -41,23 +41,56 @@ type Category {
   products: [Product!]! @goField(forceResolver: true)
 }
 
+type SearchQuery{
+  id: ID!
+  query: String!
+  count: Int!
+}
+
+type PromotionBanner{
+  id: ID!
+  title: String!
+  link: String!
+  image: String!
+}
+
+type UserSearch{
+  createdAt: Time! @goField(forceResolver: false)
+  user: User! @goField(forceResolver: true)
+  search: SearchQuery! @goField(forceResolver: true)
+}
+
 extend type Query {
   category(id: ID!): Category!
   categories(limit: Int): [Category!]!
   product(id: ID!): Product!
   products(shopID: ID, limit: Int, offset: Int, input: SearchProduct, topSold: Boolean): [Product!]!
+  recommendedProducts(limit: Int, offset: Int): [Product!]!
   brands(topSold: Boolean!): [ProductBrand!]!
+  userSearches(limit: Int): [UserSearch!]! @auth
+  popularSearches(limit: Int): [SearchQuery!]!
+  promotionBanners: [PromotionBanner!]!
 }
 
 extend type Mutation {
   createProduct(input: NewProduct!, shopID: ID!): Product! @auth
   createProductVariant(input: NewProduct!, groupID: ID!): Product! @auth
   createProductImage(image: String!, productID: ID!): ProductImage! @auth
+  deleteProductImage(image: String!, productID: ID!): Boolean! @auth
+
   createProductImages(images: [String!]!, productID: ID!): Boolean! @auth
   createBrand(name: String!, logo: String!): ProductBrand! @auth
   createCategory(name: String!): Category! @auth
 
-  updateProduct(input: NewProduct!, lastUpdateID: ID): Product! @auth
+  createSearchQuery(query: String): SearchQuery!
+  saveUserSearch(query: String): UserSearch! @auth
+  deleteUserSearch(query: String): UserSearch! @auth
+
+  createPromotionBanner(title: String!, link: String!, image: String!): PromotionBanner! @auth
+  deletePromotionBanner(id: ID!): Boolean! @auth
+
+  createProductAuto(input: NewProduct!): Product! @auth
+  updateProduct(productID: ID!, input: NewProduct!): Product! @auth
   deleteProduct(productID: ID!): Product! @auth
 }
 

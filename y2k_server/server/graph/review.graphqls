@@ -4,8 +4,19 @@ type Review {
   product: Product! @goField(forceResolver: true)
   createdAt: Time!
   rating: Int!
+  onTimeDelivery: Boolean!
+  productAccuracy: Boolean!
+  serviceSatisfaction: Boolean!
   description: String!
   isAnonymous: Boolean!
+}
+
+type SupportChatReview {
+  id: ID!
+  createdAt: Time!
+  rating: Int!
+  description: String!
+  user: User! @goField(forceResolver: true)
 }
 
 type ReviewCredit {
@@ -17,8 +28,12 @@ extend type Query {
   reviews(productID: ID!): [Review!]!
   userReviews: [Review!]! @auth
   reviewableProducts: [Product!]! @auth
+  supportChatReviews: [SupportChatReview!]! @auth
 }
 
 extend type Mutation {
-  createReview(productID: ID!, rating: Int!, description: String!, isAnonymous: Boolean!): Review! @auth
+  createReview(productID: ID!, rating: Int!, description: String!, onTimeDelivery: Boolean!, productAccuracy: Boolean!, serviceSatisfaction: Boolean!, isAnonymous: Boolean!): Review! @auth
+  createSupportChatReview(rating: Int!, description: String!): SupportChatReview! @auth
+  updateReview(ID: ID!, rating: Int!, description: String!, onTimeDelivery: Boolean!, productAccuracy: Boolean!, serviceSatisfaction: Boolean!): Review! @auth
+  deleteReview(ID: ID!): Boolean! @auth
 }

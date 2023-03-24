@@ -6,4 +6,5 @@ export interface User {
   password: string
   banned: boolean
   role: string
+  mailing: boolean
 }

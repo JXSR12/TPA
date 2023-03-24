@@ -16,7 +16,7 @@ import (
 )
 
 // CreateReview is the resolver for the createReview field.
-func (r *mutationResolver) CreateReview(ctx context.Context, productID string, rating int, description string, isAnonymous bool) (*model.Review, error) {
+func (r *mutationResolver) CreateReview(ctx context.Context, productID string, rating int, description string, onTimeDelivery bool, productAccuracy bool, serviceSatisfaction bool, isAnonymous bool) (*model.Review, error) {
 	db := config.GetDB()
 
 	if ctx.Value("auth") == nil {
@@ -38,13 +38,16 @@ func (r *mutationResolver) CreateReview(ctx context.Context, productID string, r
 
 	// Create the review
 	model := &model.Review{
-		ID:          uuid.NewString(),
-		CreatedAt:   time.Now(),
-		UserID:      userID,
-		ProductID:   productID,
-		Rating:      rating,
-		Description: description,
-		IsAnonymous: isAnonymous,
+		ID:                  uuid.NewString(),
+		CreatedAt:           time.Now(),
+		UserID:              userID,
+		ProductID:           productID,
+		Rating:              rating,
+		OnTimeDelivery:      onTimeDelivery,
+		ProductAccuracy:     productAccuracy,
+		ServiceSatisfaction: serviceSatisfaction,
+		Description:         description,
+		IsAnonymous:         isAnonymous,
 	}
 
 	if err := db.Create(model).Error; err != nil {
@@ -59,6 +62,118 @@ func (r *mutationResolver) CreateReview(ctx context.Context, productID string, r
 	}
 
 	return model, nil
+}
+
+// CreateSupportChatReview is the resolver for the createSupportChatReview field.
+func (r *mutationResolver) CreateSupportChatReview(ctx context.Context, rating int, description string) (*model.SupportChatReview, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	// Create the review
+	model := &model.SupportChatReview{
+		ID:          uuid.NewString(),
+		CreatedAt:   time.Now(),
+		UserID:      userID,
+		Rating:      rating,
+		Description: description,
+	}
+
+	if err := db.Create(model).Error; err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error creating support chat review",
+		}
+	}
+
+	return model, nil
+}
+
+// UpdateReview is the resolver for the updateReview field.
+func (r *mutationResolver) UpdateReview(ctx context.Context, id string, rating int, description string, onTimeDelivery bool, productAccuracy bool, serviceSatisfaction bool) (*model.Review, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	// Check if the review exists
+	var review model.Review
+	err := db.Where("id = ?", id).First(&review).Error
+	if err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, Review doesn't exist",
+		}
+	}
+
+	// Check if the user who made the review matches the user in the auth context
+	if review.UserID != userID {
+		return nil, &gqlerror.Error{
+			Message: "Error, unauthorized to update review",
+		}
+	}
+
+	// Update the review
+	review.Rating = rating
+	review.Description = description
+	review.OnTimeDelivery = onTimeDelivery
+	review.ProductAccuracy = productAccuracy
+	review.ServiceSatisfaction = serviceSatisfaction
+
+	if err := db.Save(&review).Error; err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error updating review",
+		}
+	}
+
+	return &review, nil
+}
+
+// DeleteReview is the resolver for the deleteReview field.
+func (r *mutationResolver) DeleteReview(ctx context.Context, id string) (bool, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return false, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	// Check if the review exists
+	var review model.Review
+	err := db.Where("id = ?", id).First(&review).Error
+	if err != nil {
+		return false, &gqlerror.Error{
+			Message: "Error, Review doesn't exist",
+		}
+	}
+
+	// Check if the user who made the review matches the user in the auth context
+	if review.UserID != userID {
+		return false, &gqlerror.Error{
+			Message: "Error, unauthorized to delete review",
+		}
+	}
+
+	// Delete the review
+	if err := db.Delete(&review).Error; err != nil {
+		return false, &gqlerror.Error{
+			Message: "Error deleting review",
+		}
+	}
+
+	return true, nil
 }
 
 // Reviews is the resolver for the reviews field.
@@ -116,6 +231,21 @@ func (r *queryResolver) ReviewableProducts(ctx context.Context) ([]*model.Produc
 	return products, nil
 }
 
+// SupportChatReviews is the resolver for the supportChatReviews field.
+func (r *queryResolver) SupportChatReviews(ctx context.Context) ([]*model.SupportChatReview, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	// Query all reviews by user ID
+	var models []*model.SupportChatReview
+	return models, db.Find(&models).Error
+}
+
 // User is the resolver for the user field.
 func (r *reviewResolver) User(ctx context.Context, obj *model.Review) (*model.User, error) {
 	db := config.GetDB()
@@ -161,11 +291,28 @@ func (r *reviewCreditResolver) User(ctx context.Context, obj *model.ReviewCredit
 	return &user, nil
 }
 
+// User is the resolver for the user field.
+func (r *supportChatReviewResolver) User(ctx context.Context, obj *model.SupportChatReview) (*model.User, error) {
+	db := config.GetDB()
+	var user model.User
+	if err := db.Where("id = ?", obj.UserID).First(&user).Error; err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 // Review returns ReviewResolver implementation.
 func (r *Resolver) Review() ReviewResolver { return &reviewResolver{r} }
 
 // ReviewCredit returns ReviewCreditResolver implementation.
 func (r *Resolver) ReviewCredit() ReviewCreditResolver { return &reviewCreditResolver{r} }
 
+// SupportChatReview returns SupportChatReviewResolver implementation.
+func (r *Resolver) SupportChatReview() SupportChatReviewResolver {
+	return &supportChatReviewResolver{r}
+}
+
 type reviewResolver struct{ *Resolver }
 type reviewCreditResolver struct{ *Resolver }
+type supportChatReviewResolver struct{ *Resolver }

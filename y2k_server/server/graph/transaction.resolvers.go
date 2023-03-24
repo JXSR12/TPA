@@ -43,7 +43,7 @@ func (r *mutationResolver) CheckoutCart(ctx context.Context, shipmentTypeID stri
 		UserID:          userID,
 		ShipmentID:      shipmentTypeID,
 		PaymentMethodID: paymentMethodID,
-		Status:          "COMPLETE",
+		Status:          "OPEN",
 		AddressID:       addressID,
 	}
 
@@ -126,6 +126,203 @@ func (r *mutationResolver) CheckoutCart(ctx context.Context, shipmentTypeID stri
 	}
 
 	return header, nil
+}
+
+// CancelTransaction is the resolver for the cancelTransaction field.
+func (r *mutationResolver) CancelTransaction(ctx context.Context, transactionID string) (*model.TransactionHeader, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	var transactionHeader model.TransactionHeader
+	err := db.Where("id = ?", transactionID).First(&transactionHeader).Error
+	if err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, transaction gaada",
+		}
+	}
+
+	if transactionHeader.Status == "CANCELLED" {
+		return nil, &gqlerror.Error{
+			Message: "Error, transaction already cancelled",
+		}
+	}
+
+	if transactionHeader.UserID != userID {
+		// Check if the user has the shop that sells at least one of the products in the transaction detail.
+		transactionDetails := []*model.TransactionDetail{}
+		if err := db.Where("transaction_header_id = ?", transactionID).Find(&transactionDetails).Error; err != nil {
+			return nil, err
+		}
+
+		hasShopProduct := false
+		for _, transactionDetail := range transactionDetails {
+			product := &model.Product{}
+			if err := db.Where("id = ?", transactionDetail.ProductID).First(product).Error; err != nil {
+				return nil, err
+			}
+			if product.ShopID == userID {
+				hasShopProduct = true
+				break
+			}
+		}
+		if !hasShopProduct {
+			return nil, &gqlerror.Error{
+				Message: "Error, unauthorized access to transaction",
+			}
+		}
+	}
+
+	transactionHeader.Status = "CANCELLED"
+
+	err = db.Save(&transactionHeader).Error
+	if err != nil {
+		return &transactionHeader, &gqlerror.Error{
+			Message: "Error updating transaction",
+		}
+	}
+
+	return &transactionHeader, nil
+}
+
+// CompleteTransaction is the resolver for the completeTransaction field.
+func (r *mutationResolver) CompleteTransaction(ctx context.Context, transactionID string) (*model.TransactionHeader, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token not found",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	// Check if user has shop that sells at least one product in the transaction details
+	shop, err := service.ShopGetByUserID(ctx, userID)
+	if err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error getting user shop",
+		}
+	}
+
+	var header model.TransactionHeader
+	if err := db.First(&header, "id = ?", transactionID).Error; err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error getting transaction header",
+		}
+	}
+
+	var details []model.TransactionDetail
+	if err := db.Where("transaction_header_id = ?", transactionID).Find(&details).Error; err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error getting transaction details",
+		}
+	}
+
+	hasProduct := false
+	for _, detail := range details {
+		product := new(model.Product)
+		if err := db.First(product, "id = ?", detail.ProductID).Error; err != nil {
+			return nil, &gqlerror.Error{
+				Message: "Error getting product",
+			}
+		}
+
+		if product.ShopID == shop.ID {
+			hasProduct = true
+			break
+		}
+	}
+
+	if !hasProduct {
+		return nil, &gqlerror.Error{
+			Message: "Error, user is not authorized to complete transaction",
+		}
+	}
+
+	if header.Status == "COMPLETED" {
+		return &header, nil
+	}
+
+	if header.Status != "OPEN" {
+		return nil, &gqlerror.Error{
+			Message: "Error, transaction has already been cancelled",
+		}
+	}
+
+	header.Status = "COMPLETED"
+	if err := db.Save(&header).Error; err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error updating transaction status",
+		}
+	}
+
+	return &header, nil
+}
+
+// CreateVoucher is the resolver for the createVoucher field.
+func (r *mutationResolver) CreateVoucher(ctx context.Context, id string, value float64) (*model.CreditVoucher, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "No auth token",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+	user, _ := service.UserGetByID(ctx, userID)
+
+	if user.Role != model.UserRoleAdmin {
+		return nil, &gqlerror.Error{
+			Message: "Unauthorized to create voucher",
+		}
+	}
+
+	voucher := &model.CreditVoucher{
+		ID:    id,
+		Value: value,
+		Valid: true,
+	}
+
+	err := db.Create(voucher).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return voucher, nil
+}
+
+// DeleteVoucher is the resolver for the deleteVoucher field.
+func (r *mutationResolver) DeleteVoucher(ctx context.Context, id string) (bool, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return false, &gqlerror.Error{
+			Message: "No auth token",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+	user, _ := service.UserGetByID(ctx, userID)
+
+	if user.Role != model.UserRoleAdmin {
+		return false, &gqlerror.Error{
+			Message: "Unauthorized to delete vouchers",
+		}
+	}
+
+	if err := db.Delete(&model.CreditVoucher{}, "id = ?", id).Error; err != nil {
+		return false, err
+	}
+
+	return true, nil
 }
 
 // RedeemVoucher is the resolver for the redeemVoucher field.
@@ -223,6 +420,74 @@ func (r *queryResolver) UserOrders(ctx context.Context) ([]*model.TransactionHea
 
 	var models []*model.TransactionHeader
 	return models, db.Where("user_id = ?", userID).Order("date DESC").Find(&models).Error
+}
+
+// ShopOrders is the resolver for the shopOrders field.
+func (r *queryResolver) ShopOrders(ctx context.Context) ([]*model.TransactionHeader, error) {
+	db := config.GetDB()
+
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+	// Retrieve user ID from auth context
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+	shop, _ := service.ShopGetByUserID(ctx, userID)
+
+	// Join transaction_headers and transaction_details tables to get all headers with at least one detail sold by the shop
+	var headers []*model.TransactionHeader
+	err := db.Joins("JOIN transaction_details ON transaction_headers.id = transaction_details.transaction_header_id").
+		Joins("JOIN products ON transaction_details.product_id = products.id").
+		Where("products.shop_id = ?", shop.ID).
+		Group("transaction_headers.id").
+		Find(&headers).
+		Error
+	if err != nil {
+		return nil, err
+	}
+
+	return headers, nil
+}
+
+func (r *queryResolver) GetLastTransID(ctx context.Context, userID string, shopID string) (string, error) {
+	db := config.GetDB()
+	// Verify user is authenticated
+	if ctx.Value("auth") == nil {
+		return uuid.NewString(), &gqlerror.Error{
+			Message: "Unauthorized",
+			Extensions: map[string]interface{}{
+				"code": "UNAUTHORIZED",
+			},
+		}
+	}
+
+	// Query the database for the last transaction ID for the given user and shop
+	var transID string
+	if err := db.Model(&model.TransactionHeader{}).
+		Joins("LEFT JOIN transaction_details ON transaction_details.transaction_header_id = transaction_headers.id").
+		Joins("LEFT JOIN products ON transaction_details.product_id = products.id").
+		Where("transaction_headers.user_id = ? AND products.shop_id = ?", userID, shopID).
+		Order("transaction_headers.date DESC").
+		Limit(1).
+		Pluck("transaction_headers.id", &transID).
+		Error; err != nil {
+		return uuid.NewString(), nil
+	}
+
+	if len(transID) == 0 {
+		return uuid.NewString(), nil
+	}
+
+	return transID, nil
+}
+
+// Vouchers is the resolver for the vouchers field.
+func (r *queryResolver) Vouchers(ctx context.Context) ([]*model.CreditVoucher, error) {
+	db := config.GetDB()
+
+	var models []*model.CreditVoucher
+	return models, db.Find(&models).Error
 }
 
 // TransactionHeader is the resolver for the transactionHeader field.

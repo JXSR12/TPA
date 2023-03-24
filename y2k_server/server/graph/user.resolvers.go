@@ -90,6 +90,44 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.NewUser) 
 	panic(fmt.Errorf("not implemented: CreateUser - createUser"))
 }
 
+// BanUser is the resolver for the banUser field.
+func (r *mutationResolver) BanUser(ctx context.Context, id string) (*model.User, error) {
+	// Check if user is authenticated and is an admin
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "Error, token gaada",
+		}
+	}
+
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+
+	user, err := service.UserGetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if user.Role != model.UserRoleAdmin {
+		return nil, &gqlerror.Error{
+			Message: "Error, not authorized to ban users",
+		}
+	}
+
+	// Toggle the banned status of the user with the specified ID
+	targetUser, err := service.UserGetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	targetUser.Banned = !targetUser.Banned
+
+	// Manually save the updated user to the database
+	err = config.GetDB().Model(&targetUser).Where("id = ?", id).Update("banned", targetUser.Banned).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return targetUser, nil
+}
+
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id string) (*model.User, error) {
 	return service.UserGetByID(ctx, id)
@@ -110,6 +148,93 @@ func (r *queryResolver) Protected(ctx context.Context) (string, error) {
 	return "Success", nil
 }
 
+// CurrentSubscribedEmails is the resolver for the currentSubscribedEmails field.
+func (r *queryResolver) CurrentSubscribedEmails(ctx context.Context) ([]string, error) {
+	db := config.GetDB()
+
+	// Check if user is authenticated and is admin
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "No auth token",
+		}
+	}
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+	user, err := service.UserGetByID(ctx, userID)
+	if err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error getting user",
+			Extensions: map[string]interface{}{
+				"error": err.Error(),
+			},
+		}
+	}
+	if user.Role != model.UserRoleAdmin {
+		return nil, &gqlerror.Error{
+			Message: "Unauthorized to retrieve all emails",
+		}
+	}
+
+	// Get all emails of users whose 'mailing' is set to true
+	var emails []string
+	err = db.Model(&model.User{}).Where("mailing = ?", true).Pluck("email", &emails).Error
+	if err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error retrieving emails",
+			Extensions: map[string]interface{}{
+				"error": err.Error(),
+			},
+		}
+	}
+
+	return emails, nil
+}
+
+// NoShopUsers is the resolver for the noShopUsers field.
+func (r *queryResolver) NoShopUsers(ctx context.Context) ([]*model.User, error) {
+	db := config.GetDB()
+
+	// Check if user is authenticated and is admin
+	if ctx.Value("auth") == nil {
+		return nil, &gqlerror.Error{
+			Message: "No auth token",
+		}
+	}
+	userID := ctx.Value("auth").(*service.JwtCustomClaim).ID
+	user, err := service.UserGetByID(ctx, userID)
+	if err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error getting user",
+			Extensions: map[string]interface{}{
+				"error": err.Error(),
+			},
+		}
+	}
+	if user.Role != model.UserRoleAdmin {
+		return nil, &gqlerror.Error{
+			Message: "Unauthorized to retrieve no shop users",
+		}
+	}
+
+	// Get all users that do not have a shop
+	var users []*model.User
+	err = db.Where("id NOT IN (SELECT user_id FROM shops)").Find(&users).Error
+	if err != nil {
+		return nil, &gqlerror.Error{
+			Message: "Error retrieving no shop users",
+			Extensions: map[string]interface{}{
+				"error": err.Error(),
+			},
+		}
+	}
+
+	return users, nil
+}
+
+// OneTimeCode is the resolver for the oneTimeCode field.
+func (r *userResolver) OneTimeCode(ctx context.Context, obj *model.User) (string, error) {
+	panic(fmt.Errorf("not implemented: OneTimeCode - oneTimeCode"))
+}
+
 // AuthOps returns AuthOpsResolver implementation.
 func (r *Resolver) AuthOps() AuthOpsResolver { return &authOpsResolver{r} }
 
@@ -119,6 +244,10 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// User returns UserResolver implementation.
+func (r *Resolver) User() UserResolver { return &userResolver{r} }
+
 type authOpsResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type userResolver struct{ *Resolver }

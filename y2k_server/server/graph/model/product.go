@@ -36,3 +36,17 @@ type ProductImage struct {
 	Product   *Product `json:"product"`
 	ProductID string   `json:"productID" gorm:"size:191"`
 }
+
+type SearchQuery struct {
+	ID    string `json:"id"`
+	Query string `json:"query"`
+	Count int    `json:"count"`
+}
+
+type UserSearch struct {
+	User      *User        `json:"user"`
+	UserID    string       `json:"userID" gorm:"size:191"`
+	Search    *SearchQuery `json:"search"`
+	SearchID  string       `json:"searchID" gorm:"size:191"`
+	CreatedAt time.Time    `json:"createdAt"`
+}

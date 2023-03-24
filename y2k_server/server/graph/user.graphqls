@@ -19,6 +19,7 @@ type User{
   role: UserRole!
   mailing: Boolean!
   creditBalance: Float!
+  oneTimeCode: String!
 }
 
  input NewUser{
@@ -47,6 +48,8 @@ type Mutation {
     updateUser(input: ChangeUser!): User! @auth
     updateUserPassword(oldpassword: String!, newpassword: String!): User! @auth
     createUser(input: NewUser!): Any! @auth
+
+    banUser(id: ID!): User! @auth
 }
 
 
@@ -55,4 +58,6 @@ type Query{
      getUser: User! @goField(forceResolver: true) @auth
      users: [User!]! @goField(forceResolver: true) @auth
      protected: String! @goField(forceResolver: true) @auth
+     currentSubscribedEmails: [String!]! @goField(forceResolver: true) @auth
+     noShopUsers: [User!]! @goField(forceResolver: true) @auth
 }

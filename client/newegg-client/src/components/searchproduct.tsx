@@ -1,10 +1,12 @@
 import { Product } from '@/interfaces/product';
+import { UserSearch } from '@/interfaces/search';
 import styles from '@/styles/CardGrid.module.css';
 import searchStyles from '@/styles/SearchBar.module.css'
-import { ALLPRODUCTS_QUERY, GRAPHQL_API, SEARCHPRODUCTS_QUERY, USERS_QUERY } from '@/utils/constants';
+import { ALLPRODUCTS_QUERY, GETUSERSEARCHES_QUERY, GRAPHQL_API, SAVEUSERSEARCH_QUERY, SEARCHPRODUCTS_QUERY, USERS_QUERY } from '@/utils/constants';
 import axios from 'axios';
-import { useRouter } from 'next/router';
+import Router, { useRouter } from 'next/router';
 import React from 'react';
+import { Client, HydrationProvider } from 'react-hydration-provider';
 import { useSessionStorage } from 'usehooks-ts';
 import ProductCard from './productcard';
 
@@ -14,6 +16,7 @@ export default function Searchs(props: {search: string}){
 
   const [ jwtToken, setJwtToken ] = useSessionStorage('jwtToken', 'NULL')
   const [ items, setItems ] = React.useState<Product[]>([])
+  const [ queries, setQueries ] = React.useState<UserSearch[]>([])
 
   const [ filteredItems, setFilteredItems ] = React.useState<Product[]>([])
 
@@ -51,12 +54,51 @@ export default function Searchs(props: {search: string}){
       })
   }
 
+  const retrieveSearches = () => {
+    setLoading(true);
+      axios.post(GRAPHQL_API, {
+        query: GETUSERSEARCHES_QUERY(10)
+      },
+      {
+        headers: {
+          Authorization: "Bearer " + jwtToken
+        }
+      }
+      ).then(res => {
+        console.log(res.data.data)
+        setQueries(res.data.data.userSearches)
+      }).catch(err => {
+        console.log("Error retrieving saved queries")
+      })
+  }
+
+  const saveQuery = () => {
+    setLoading(true);
+      axios.post(GRAPHQL_API, {
+        query: SAVEUSERSEARCH_QUERY(search)
+      },
+      {
+        headers: {
+          Authorization: "Bearer " + jwtToken
+        }
+      }
+      ).then(res => {
+        retrieveSearches()
+      }).catch(err => {
+        console.log("Error saving query")
+      })
+  }
+
   const handleSearchChange = (event: React.ChangeEvent<{ value: string }>) => {
     setSearchQuery(event.target.value);
   }
 
   const handleSearch = (event: any) => {
 
+  }
+
+  const handleSaveQuery = () => {
+    saveQuery();
   }
 
   React.useEffect(() => {
@@ -72,6 +114,7 @@ export default function Searchs(props: {search: string}){
 
   React.useEffect(() => {
     retrieveItems()
+    retrieveSearches()
   }, [search])
 
   React.useEffect(() => {
@@ -84,14 +127,31 @@ export default function Searchs(props: {search: string}){
   }, [page, filteredItems])
 
   return(
+    <HydrationProvider>
+    <Client>
     <div className={styles['container']}>
       <h2 className={styles['header']}>Search result for '{search}'</h2>
+      <br/>
+      <center><button className={styles['pagination-button']} onClick={jwtToken != 'NULL' ? handleSaveQuery : e => Router.push('/login')}>{jwtToken != 'NULL' ? "Save This Search Query" : "Sign In To Save This Query"}</button></center>
+      <br/>
+      <h4 className={styles['header']}>{jwtToken != 'NULL' ? 'Recently saved queries' : ''}</h4>
+      <br/>
+        <center className={styles['chips']}>
+          {queries?.map(e =>
+            <div className={styles['chip']} onClick={ev => {Router.push('/search?search=' + e.search.query)}} key={e.search.id}>
+              <div className={styles['chip-head']}>{e.search.query.charAt(0)}</div>
+              <div className={styles['chip-content']}>{e.search.query}</div>
+            </div>
+          )}
+        </center>
+      <br/>
       <br/>
       <div className={searchStyles['search-form-order']} role="search">
         <label htmlFor='search' className={searchStyles['label']}>Search</label>
         <input className={searchStyles['input-order']} id="search" type="search" onChange={handleSearchChange} placeholder="Search within this search query.." autoFocus required />
         <button className={searchStyles['button-order']} type="submit" onClick={handleSearch}>Search</button>
       </div>
+
       <br/>
       {filteredItems.length > 0 &&
       <center>
@@ -127,5 +187,7 @@ export default function Searchs(props: {search: string}){
       {loading ?  <div className={styles['text-center']}>Fetching products..</div> : "" }
       {paginatedItems.length <= 0 ? <div className={styles['text-center']}>No result found for your search</div> : "" }
     </div>
+    </Client>
+    </HydrationProvider>
   )
 }

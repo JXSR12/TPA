@@ -22,15 +22,18 @@ export const PROTECTED_QUERY =
 }`
 
 export const USERS_QUERY =
-`query{
-  users {
-    id
-    name
-    phone
-    email
-    password
-    banned
-    role
+`
+query{
+  users{
+    id,
+    name,
+    email,
+    phone,
+    password,
+    banned,
+    role,
+    mailing,
+    creditBalance,
   }
 }
 `
@@ -39,6 +42,42 @@ export const ALLPRODUCTS_QUERY = (limit: number, offset: number) =>
 `
 query{
   products(limit: ${limit}, offset: ${offset}){
+    id,
+    name,
+    images{
+      image
+      id
+    }
+    description,
+    price,
+    discount,
+    stock,
+    brand{
+      id,
+      name,
+      logo
+    },
+    category{
+      id,
+      name
+    },
+    reviews{
+      id,
+      user{
+        id
+      },
+      rating,
+      description,
+      isAnonymous
+    }
+  }
+}
+`
+
+export const RECOMMENDEDPRODUCTS_QUERY = (limit: number, offset: number) =>
+`
+query{
+  recommendedProducts(limit: ${limit}, offset: ${offset}){
     id,
     name,
     images{
@@ -226,7 +265,8 @@ query{
       rating,
       description,
       isAnonymous
-    }
+    },
+    validTo
   }
 }
 `
@@ -365,6 +405,72 @@ mutation{
 }
 `
 
+export const SHOPTRANSHEADERS_QUERY =
+`
+query{
+  shopOrders{
+    id,
+    date,
+    user{
+      id,
+      name,
+      email,
+      phone,
+      password,
+      banned,
+      role,
+      mailing,
+      creditBalance
+    },
+    shipment{
+      id,
+      name,
+      fee
+    },
+    paymentMethod{
+      id,
+      name
+    },
+    status,
+    transactionDetails{
+      product{
+        id,
+        name,
+        images{
+          image
+        },
+        description,
+        price,
+        discount,
+        stock,
+        metadata,
+        createdAt,
+        validTo,
+        group{
+          id
+        },
+        brand{
+          id,
+          name,
+          logo
+        },
+        category{
+          id,
+          name
+        },
+        reviews{
+          id,
+          rating,
+          description
+        }
+      },
+      quantity,
+      notes
+    }
+  }
+}
+`
+
 export const USERTRANSHEADERS_QUERY =
 `
 query{
@@ -392,12 +498,6 @@ query{
       name
     },
     status,
-    address{
-      id,
-      name,
-      content,
-      primary
-    },
     transactionDetails{
       product{
         id,
@@ -658,7 +758,7 @@ mutation{
 export const ALLBRANDS_QUERY =
 `
 query{
-  brands(topSold: false){
+  brands(topSold: true){
     id,
     name,
     logo
@@ -678,8 +778,12 @@ query{
     profilePic,
     user{
       id,
-      name
+      name,
+      banned,
+      role,
+      email
     },
+    transactionValue
   }
 }
 `
@@ -696,7 +800,8 @@ query{
     profilePic,
     user{
       id,
-      name
+      name,
+      banned
     },
     products{
       id,
@@ -727,6 +832,659 @@ query{
         isAnonymous
       }
     }
+  }
+}
+`
+
+export const ADDSEARCH_QUERY = (query: string) =>
+`
+mutation{
+  createSearchQuery(query: "${query}"){
+    query,
+    count
+  }
+}
+`
+
+export const SAVEUSERSEARCH_QUERY = (query: string) =>
+`
+mutation{
+  saveUserSearch(query: "${query}"){
+    search{
+      id,
+      query
+    },
+    createdAt
+  }
+}
+`
+
+export const GETUSERSEARCHES_QUERY = (limit: number) =>
+`
+query{
+  userSearches(limit: ${limit}){
+    createdAt,
+    search{
+      id,
+      query,
+      count
+    }
+  }
+}
+`
+
+export const GETPOPULARSEARCHES_QUERY = (limit: number) =>
+`
+query{
+  popularSearches(limit: ${limit}){
+    id,
+    query,
+    count
+  }
+}
+`
+
+export const SHOPRECOMMENDED_QUERY = (shopId: string, limit: number, offset: number, topSold: boolean) =>
+`
+query{
+  products(shopID: "${shopId}", limit: ${limit}, offset: ${offset}, topSold: ${topSold}){
+    id,
+    name,
+    images{
+      image
+    },
+    description,
+    price,
+    discount,
+    stock,
+    brand{
+      id,
+      name,
+      logo
+    },
+    category{
+      id,
+      name
+    },
+    reviews{
+      id,
+      user{
+        id
+      },
+      rating,
+      description,
+      isAnonymous
+    }
+  }
+}
+`
+
+export const UPDATESHOP_QUERY = (name: string, profile: string, address: string, banner: string, description: string) =>
+`
+mutation{
+  updateShop(input: {
+    name: "${name}",
+    address: "${address}",
+    description: "${description}",
+    profilePic: "${profile}",
+    banner: "${banner}"
+  }){
+    id
+  }
+}
+`
+
+export const UPDATEPRODUCT_QUERY = (productId: string, name: string, desc: string, price: number, disc: number, stock: number, catId: string, brandId: string) =>
+`
+mutation{
+  updateProduct(productID: "${productId}", input:{
+    name: "${name}",
+    description: "${desc}",
+    price: ${price},
+    discount: ${disc},
+    stock: ${stock},
+    metadata: "",
+    categoryID: "${catId}",
+    brandID: "${brandId}"
+  }){
+    id
+  }
+}
+`
+
+
+export const CREATEPRODUCT_QUERY = (name: string, desc: string, price: number, disc: number, stock: number, catId: string, brandId: string) =>
+`
+mutation{
+  createProductAuto(input:{
+    name: "${name}",
+    description: "${desc}",
+    price: ${price},
+    discount: ${disc},
+    stock: ${stock},
+    metadata: "",
+    categoryID: "${catId}",
+    brandID: "${brandId}"
+  }){
+    id
+  }
+}
+`
+
+export const CATEGORIES_QUERY =
+`
+query{
+  categories{
+    id,
+    name,
+  }
+}
+`
+
+export const BRANDS_QUERY =
+`
+query{
+  brands(topSold:false){
+    id,
+    name,
+    logo
+  }
+}
+`
+
+export const DELETEPRODUCT_QUERY = (id: string) =>
+`
+mutation{
+  deleteProduct(productID: "${id}"){
+    id
+  }
+}
+`
+
+export const CREATEPRODUCTIMAGES_QUERY = (productId: string, images: string[]) =>
+`
+mutation{
+  createProductImages(images: ${JSON.stringify(images)}, productID: "${productId}")
+}
+`
+
+export const CANCELORDER_QUERY = (id: string) =>
+`
+mutation{
+  cancelTransaction(transactionID: "${id}"){
+    id
+  }
+}
+`
+
+export const COMPLETEORDER_QUERY = (id: string) =>
+`
+mutation{
+  completeTransaction(transactionID: "${id}"){
+    id
+  }
+}
+`
+
+export const USERREVIEWS_QUERY =
+`
+query{
+  userReviews{
+    id,
+    user{
+      id,
+      name,
+      email,
+      role,
+      phone,
+      banned
+    },
+    product{
+      name,
+      images{
+        image
+      },
+      description,
+      price,
+      discount,
+      stock,
+      shop{
+        id,
+        name
+      }
+    },
+    rating,
+    description,
+    isAnonymous,
+    onTimeDelivery,
+    productAccuracy,
+    serviceSatisfaction
+    createdAt,
+  }
+}
+`
+
+export const SHOPREVIEWS_QUERY = (id: string) =>
+`
+query{
+  shopReviews(id: "${id}"){
+    id,
+    user{
+      id,
+      name,
+      email,
+      role,
+      phone,
+      banned
+    },
+    product{
+      name,
+      images{
+        image
+      },
+      description,
+      price,
+      discount,
+      stock,
+      shop{
+        id,
+        name
+      }
+    },
+    rating,
+    description,
+    isAnonymous,
+    onTimeDelivery,
+    productAccuracy,
+    serviceSatisfaction
+    createdAt,
+  }
+}
+`
+
+export const UPDATEREVIEW_QUERY = (id: string, rating: number, desc: string, onTime: boolean, accuracy: boolean, satisfaction: boolean) =>
+`
+mutation{
+  updateReview(
+    ID: "${id}",
+    rating: ${rating},
+    description: "${desc}",
+    onTimeDelivery: ${onTime},
+    productAccuracy: ${accuracy},
+    serviceSatisfaction: ${satisfaction},
+  ){
+    id
+  }
+}
+`
+
+export const DELETEREVIEW_QUERY = (id: string) =>
+`
+mutation{
+  deleteReview(ID: "${id}")
+}
+`
+
+export const SHOPAVGRATING_QUERY = (id: string) =>
+`
+query{
+  averageRating(id: "${id}")
+}
+`
+
+export const SHOPITEMSSOLD_QUERY = (id: string) =>
+`
+query{
+  itemsSold(id: "${id}")
+}
+`
+
+export const BANUSER_QUERY = (id: string) =>
+`
+mutation{
+  banUser(id: "${id}"){
+    id,
+    name,
+    banned
+  }
+}
+`
+
+export const CREATEVOUCHER_QUERY = (id: string, value: number) =>
+`
+mutation{
+  createVoucher(id: "${id}", value: ${value}){
+    id,
+    value,
+    valid
+	}
+}
+`
+
+export const DELETEVOUCHER_QUERY = (id: string) =>
+`
+mutation{
+  deleteVoucher(id: "${id}")
+}
+`
+
+export const CREATEBANNER_QUERY = (title: string, link: string, image: string) =>
+`
+mutation{
+  createPromotionBanner(
+    title: "${title}",
+    link: "${link}"
+    image: "${image}"
+  ){
+    id,
+    title,
+    link,
+    image
+  }
+}
+`
+
+export const DELETEBANNER_QUERY = (id: string) =>
+`
+mutation{
+  deletePromotionBanner(id: "${id}")
+}
+`
+
+export const VOUCHERS_QUERY =
+`
+query{
+  vouchers{
+    id,
+    value,
+    valid
+  }
+}
+`
+
+export const BANNERS_QUERY =
+`
+query{
+  promotionBanners{
+    id,
+    title,
+    link,
+    image
+  }
+}
+`
+
+export const SUBSCRIBEDEMAILS_QUERY =
+`
+query{
+  currentSubscribedEmails
+}
+`
+
+export const CREATESHOPADMIN_QUERY = (name: string, desc: string, address: string, userId: string) =>
+`
+mutation{
+  createShopAdmin(input: {
+    name: "${name}",
+    address: "${address}",
+    description: "${desc}",
+    profilePic: "https://mediaservice.retailmenot.com/ws/mediagroup/GFHCYHTWGZHMVLETA5XJ7YFYJE?width=400&height=400",
+    banner: "https://mms.businesswire.com/media/20190611005196/en/725241/22/NE_Logomark_Vert.jpg",
+    password: "DEFAULT_OLDEGG_SPW",
+  },
+    userID: "${userId}"
+  ){
+    id,
+    name,
+    address,
+    description,
+    profilePic,
+    banner,
+    user{
+      id,
+      name,
+      banned
+    }
+  }
+}
+`
+
+export const NOSHOPUSERS_QUERY =
+`
+query{
+  noShopUsers{
+    id,
+    name,
+    email,
+    phone,
+    banned,
+    role,
+    mailing,
+    creditBalance
+  }
+}
+`
+
+export const SUPPORTCHATREVIEWS_QUERY =
+`
+query{
+  supportChatReviews{
+    id,
+    createdAt,
+    rating,
+    description,
+    user{
+      id,
+      name,
+      email,
+      banned,
+      phone,
+      role,
+      mailing,
+      creditBalance
+    }
+  }
+}
+`
+
+export const ONGOINGSUPPORTCHAT_QUERY =
+`
+query{
+  supportChat{
+    id,
+    createdAt,
+    customer{
+      id,
+      name
+    },
+    isResolved,
+    topicTags,
+    messages{
+      id,
+      isStaffMessage,
+      createdAt,
+      text,
+      fileURL,
+      imageURL,
+    }
+  }
+}
+`
+
+export const SELLERCHATS_QUERY =
+`
+query{
+  sellerChats{
+    id,
+    createdAt,
+    seller{
+      id,
+      name
+    },
+    customer{
+      id,
+      name
+    },
+    messages{
+      id,
+      isSellerMessage,
+      createdAt,
+      text,
+      fileURL,
+      imageURL
+    }
+  }
+}
+`
+
+export const CUSTOMERCHATS_QUERY =
+`
+query{
+  customerChats{
+    id,
+    createdAt,
+    seller{
+      id,
+      name
+    },
+    customer{
+      id,
+      name
+    },
+    messages{
+      id,
+      isSellerMessage,
+      createdAt,
+      text,
+      fileURL,
+      imageURL
+    }
+  }
+}
+`
+
+export const ALLSUPPORTCHATS_QUERY =
+`
+query{
+  supportChats{
+    id,
+    createdAt,
+    customer{
+      id,
+      name
+    },
+    isResolved,
+    topicTags,
+    messages{
+      id,
+      isStaffMessage,
+      createdAt,
+      text,
+      fileURL,
+      imageURL,
+    }
+  }
+}
+`
+
+export const USERNOTIFICATIONS_QUERY =
+`
+query{
+  userNotifications{
+    id,
+    createdAt,
+    fromName,
+    user{
+      id,
+      name
+    },
+    text,
+    isRead
+  }
+}
+`
+
+export const SENDSUPPORTMESSAGE_QUERY = (isStaff: boolean, chatId: string, text: string, fileURL: string, imageURL: string) =>
+`
+mutation{
+  sendSupportMessage(
+    isStaffMessage: ${isStaff},
+    chatId: "${chatId}",
+    text: "${text}",
+    fileURL: "${fileURL}",
+    imageURL: "${imageURL}",
+  ){
+    id,
+    createdAt,
+    fileURL,
+    imageURL
+  }
+}
+`
+
+export const SENDUSERMESSAGE_QUERY = (isSeller: boolean, chatId: string, text: string, fileURL: string, imageURL: string) =>
+`
+mutation{
+  sendUserMessage(
+    isSellerMessage: ${isSeller},
+    chatId: "${chatId}",
+    text: "${text}",
+    fileURL: "${fileURL}",
+    imageURL: "${imageURL}"
+  ){
+    id,
+    createdAt,
+    fileURL,
+    imageURL
+  }
+}
+`
+
+export const MARKRESOLVED_QUERY =  (chatId: string) =>
+`
+mutation{
+  markResolved(chatId: "${chatId}"){
+    id,
+    isResolved
+  }
+}
+`
+
+export const TAGTOPICS_QUERY =  (chatId: string, topic: string) =>
+`
+mutation{
+  addSupportChatTopic(chatId: "${chatId}", topic: "${topic}"){
+    id,
+    topicTags
+  }
+}
+`
+
+export const GETLASTTRANSID_QUERY = (userId: string, shopId: string) =>
+`
+query{
+  getLastTransId(userId: "${userId}", shopId: "${shopId}")
+}
+`
+
+export const CREATECSREVIEW_QUERY = (rating: number, desc: string) =>
+`
+mutation{
+  createSupportChatReview(rating: ${rating}, description: "${desc}"){
+    id,
+    createdAt,
+    rating,
+    description
+  }
+}
+`
+
+export const CREATENEWCSCHAT_QUERY = (customerId: string) =>
+`
+mutation{
+  createSupportChat(customerId: "${customerId}"){
+    id,
+    createdAt
   }
 }
 `

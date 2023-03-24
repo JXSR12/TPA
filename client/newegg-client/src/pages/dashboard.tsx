@@ -4,9 +4,10 @@ import { Inter } from '@next/font/google';
 import styles from '../styles/Profile.module.scss'
 import listStyles from '@/styles/Modal.module.css';
 import utilStyles from '@/styles/Utils.module.css';
+import textStyles from '@/styles/Login.module.css';
 import Link from 'next/link';
 import axios from 'axios';
-import { CREATEWISHLIST_QUERY, DELETEWISHLIST_QUERY, DUPLICATEWISHLISTITEMS_QUERY, FOLLOWEDWISHLISTSID_QUERY, FOLLOWEDWISHLISTS_QUERY, FOLLOWWISHLIST_QUERY, GETUSER_QUERY, GRAPHQL_API, PROTECTED_QUERY, PUBLICWISHLISTS_QUERY, UPDATEPASSWORD_QUERY, UPDATEPROFILE_QUERY, USERS_QUERY, USERWISHLISTS_QUERY } from '@/utils/constants';
+import { ALLSHOPS_QUERY, ALLSUPPORTCHATS_QUERY, BANNERS_QUERY, CREATECSREVIEW_QUERY, CREATENEWCSCHAT_QUERY, CREATEWISHLIST_QUERY, CUSTOMERCHATS_QUERY, DELETEWISHLIST_QUERY, DUPLICATEWISHLISTITEMS_QUERY, FOLLOWEDWISHLISTSID_QUERY, FOLLOWEDWISHLISTS_QUERY, FOLLOWWISHLIST_QUERY, GETLASTTRANSID_QUERY, GETUSER_QUERY, GRAPHQL_API, MARKRESOLVED_QUERY, ONGOINGSUPPORTCHAT_QUERY, PROTECTED_QUERY, PUBLICWISHLISTS_QUERY, SELLERCHATS_QUERY, SENDSUPPORTMESSAGE_QUERY, SENDUSERMESSAGE_QUERY, SUBSCRIBEDEMAILS_QUERY, SUPPORTCHATREVIEWS_QUERY, TAGTOPICS_QUERY, UPDATEPASSWORD_QUERY, UPDATEPROFILE_QUERY, USERNOTIFICATIONS_QUERY, USERS_QUERY, USERWISHLISTS_QUERY, VOUCHERS_QUERY } from '@/utils/constants';
 import Router from 'next/router';
 import { useSessionStorage } from 'usehooks-ts'
 import { HydrationProvider, Server, Client } from "react-hydration-provider";
@@ -24,6 +25,18 @@ import { Shipment } from '@/interfaces/shipment';
 import { TransactionDetail } from '@/interfaces/transaction';
 import { User } from '@/interfaces/user';
 import Footer from '@/components/footer';
+import AllUsers from '@/components/allusers';
+import AllBanners from '@/components/allbanners';
+import AllVouchers from '@/components/allvouchers';
+import { PromotionBanner } from '@/interfaces/promotion';
+import { CreditVoucher } from '@/interfaces/voucher';
+import AllShops from '@/components/allshops';
+import { Shop } from '@/interfaces/shop';
+import SendNewsletter from '@/components/sendnewsletter';
+import AdminCharts from '@/components/admincharts';
+import { SupportChatReview } from '@/interfaces/review';
+import AllCSReviews from '@/components/csreviews';
+import { SupportChat, SupportMessage, UserChat, UserMessage } from '@/interfaces/chat';
 
 
 // Note: The subsets need to use single quotes because the font loader values must be explicitly written literal.
@@ -58,6 +71,8 @@ export default function ProfilePage() {
   const [ inputOldPass, setInputOldPass ] = React.useState<string>("");
   const [ inputNewPass, setInputNewPass ] = React.useState<string>("");
   const [ inputNewPassConfirm, setInputNewPassConfirm ] = React.useState<string>("");
+  const [ role, setRole] = React.useState<string>("");
+  const [ userId, setUserId] = React.useState<string>("");
 
   const [ changePw, setChangePw ] = React.useState<boolean>(false);
 
@@ -96,6 +111,9 @@ export default function ProfilePage() {
       setInputEmail(res.data.data.getUser.email)
       setInputPhone(res.data.data.getUser.phone)
       setBalance(res.data.data.getUser.creditBalance)
+      setRole(res.data.data.getUser.role)
+      setUserId(res.data.data.getUser.id)
+      setMessageType(res.data.data.getUser.role == "ADMIN" ? "all support chats" : "customer service")
       setInputPassword("PASSWORDPASSWORD")
     }).catch(err => {
       console.log(err)
@@ -178,41 +196,6 @@ export default function ProfilePage() {
   }, [jwtToken]);
 
   //Message Center
-
-  const [ messageType, setMessageType ] = React.useState<string>("customer service");
-
-  const roomId = 1010192;
-
-  const { messages, sendMessage } = useChat(roomId);
-  const [newMessage, setNewMessage] = React.useState<string>("");
-
-  const [ csMessages, setCsMessages ] = React.useState<ChatMessage[]>([]);
-
-  const handleMessageTypeChange = (event: React.ChangeEvent<{ value: string }>) => {
-    setMessageType(event.target.value);
-  }
-
-  const handleNewMessageChange = (event: React.ChangeEvent<{ value: string }>) => {
-    setNewMessage(event.target.value);
-  };
-
-  const handleSendMessage = () => {
-    sendMessage(newMessage);
-    setNewMessage("");
-
-    var newmsg : ChatMessage = {type: ChatMessageType.OUTGOING, text: newMessage};
-    var newMessages = csMessages.concat(newmsg);
-    setCsMessages(newMessages);
-
-    dummyReplyMessage();
-  };
-
-  const dummyReplyMessage = () => {
-    var reply : ChatMessage = {type: ChatMessageType.INCOMING, text: "This is a default reply by OldEgg Customer Service."};
-    var newMessages = csMessages.concat(reply);
-
-    setCsMessages(newMessages);
-  }
 
   //OldEgg Credits
   const [balance, setBalance] = React.useState<number>(-1);
@@ -393,13 +376,648 @@ export default function ProfilePage() {
     retrieveWishlists(wishlistType === "my lists" ? USERWISHLISTS_QUERY : (wishlistType === "followed lists") ? FOLLOWEDWISHLISTS_QUERY : PUBLICWISHLISTS_QUERY);
   }, [wishlistType])
 
+  React.useEffect(() => {
+    retrieveUsers()
+    retrieveBanners()
+    retrieveVouchers()
+    retrieveShops()
+    retrieveEmails()
+    retrieveCSReviews()
+  }, [])
+
+  const [ users, setUsers ] = React.useState<User[]>([])
+  const [ banners, setBanners ] = React.useState<PromotionBanner[]>([])
+  const [ vouchers, setVouchers ] = React.useState<CreditVoucher[]>([])
+  const [ shops, setShops ] = React.useState<Shop[]>([])
+  const [ emails, setEmails ] = React.useState<string[]>([])
+  const [ CSReviews, setCSReviews ] = React.useState<SupportChatReview[]>([])
+
+  const retrieveUsers = () => {
+    axios.post(GRAPHQL_API, {
+      query: USERS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setUsers(res.data.data.users)
+    }).catch(err => {
+      console.log("Error retrieving users")
+    })
+  }
+
+  const retrieveBanners = () => {
+    axios.post(GRAPHQL_API, {
+      query: BANNERS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setBanners(res.data.data.promotionBanners)
+    }).catch(err => {
+      console.log("Error retrieving promotion banners")
+    })
+  }
+
+
+  const retrieveVouchers = () => {
+    axios.post(GRAPHQL_API, {
+      query: VOUCHERS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setVouchers(res.data.data.vouchers)
+    }).catch(err => {
+      console.log("Error retrieving vouchers")
+    })
+  }
+
+  const retrieveShops = () => {
+    axios.post(GRAPHQL_API, {
+      query: ALLSHOPS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setShops(res.data.data.shops)
+    }).catch(err => {
+      console.log("Error retrieving shops")
+    })
+  }
+
+  const retrieveEmails = () => {
+    axios.post(GRAPHQL_API, {
+      query: SUBSCRIBEDEMAILS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setEmails(res.data.data.currentSubscribedEmails)
+    }).catch(err => {
+      console.log("Error retrieving emails")
+    })
+  }
+
+  const retrieveCSReviews = () => {
+    axios.post(GRAPHQL_API, {
+      query: SUPPORTCHATREVIEWS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setCSReviews(res.data.data.supportChatReviews)
+    }).catch(err => {
+      console.log("Error retrieving CS reviews")
+    })
+  }
+
+  const [ ongoingSupportChat, setOngoingSupportChat ] = React.useState<SupportChat>({} as SupportChat);
+  const [ supportChats, setSupportChats] = React.useState<SupportChat[]>([]);
+  const [ sellerChats, setSellerChats] = React.useState<UserChat[]>([]);
+  const [ customerChats, setCustomerChats] = React.useState<UserChat[]>([]);
+
+  const [ FsellerChats, setFSellerChats] = React.useState<UserChat[]>([]);
+  const [ FcustomerChats, setFCustomerChats] = React.useState<UserChat[]>([]);
+
+  const [ selectedSellerChat, setSelectedSellerChat ] = React.useState<UserChat>(sellerChats[0] ? sellerChats[0] : {} as UserChat);
+  const [ selectedCustomerChat, setSelectedCustomerChat ] = React.useState<UserChat>(customerChats[0] ? customerChats[0] : {} as UserChat);
+  const [ selectedSupportChat, setSelectedSupportChat ] = React.useState<SupportChat>(supportChats[0] ? supportChats[0] : {} as SupportChat);
+
+  const [ attachment, setAttachment ] = React.useState<string>("");
+  const [ attachmentType, setAttachmentType ] = React.useState<string>("none");
+
+  const [ messageType, setMessageType ] = React.useState<string>("");
+  // const { messages, sendMessage } = useChat(roomId);
+  const [newMessage, setNewMessage] = React.useState<string>("");
+
+  const [ displayInputField, setDisplayInputField ] = React.useState<boolean>(true);
+
+  const [ chatTopic, setChatTopic ] = React.useState<string>("");
+
+  const [ csMessages, setCsMessages ] = React.useState<ChatMessage[]>([]);
+
+  const handleSelectSupportChat = (event: React.ChangeEvent<{ value: string }>) => {
+    setSelectedSupportChat(supportChats.filter((e) => {return e.id == event.target.value})[0]);
+    if(messageType == "all support chats" && supportChats.filter((e) => {return e.id == event.target.value})[0] && !supportChats.filter((e) => {return e.id == event.target.value})[0].isResolved){
+      setDisplayInputField(true)
+      setChatTopic(supportChats.filter((e) => {return e.id == event.target.value})[0].topicTags)
+    }else if (messageType == "all support chats"){
+      setDisplayInputField(false)
+      setChatTopic("")
+    }
+  }
+
+  const refreshSelectedSupportChat = () => {
+    if(messageType == "all support chats" && selectedSupportChat.isResolved){
+      setDisplayInputField(false)
+      setChatTopic("")
+    }
+  }
+
+  const handleSelectSellerChat = (event: React.ChangeEvent<{ value: string }>) => {
+    setSelectedSellerChat(sellerChats.filter((e) => {return e.id == event.target.value})[0]);
+    setDisplayInputField(true)
+  }
+
+  const handleSelectCustomerChat = (event: React.ChangeEvent<{ value: string }>) => {
+    setSelectedCustomerChat(customerChats.filter((e) => {return e.id == event.target.value})[0]);
+    setDisplayInputField(true)
+  }
+
+  const handleMessageTypeChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setMessageType(event.target.value);
+  }
+
+  const handleAttachmentTypeChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setAttachmentType(event.target.value);
+  }
+
+  const handleAttachmentChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setAttachment(event.target.value);
+  }
+
+  const handleNewMessageChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setNewMessage(event.target.value);
+  };
+
+  const handleChatTopicChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setChatTopic(event.target.value);
+  };
+
+  const handleSendMessage = () => {
+    if(newMessage.length > 0){
+      if(messageType == "customer service"){
+        sendSupportMessageAsUser(newMessage, attachmentType == "file" ? attachment : "", attachmentType == "image" ? attachment : "")
+        retrieveOngoingSupportChat()
+      }
+      if(messageType == "all support chats"){
+        sendSupportMessageAsStaff(newMessage, attachmentType == "file" ? attachment : "", attachmentType == "image" ? attachment : "")
+        retrieveAllSupportChats()
+      }
+      if(messageType == "seller messages"){
+        sendUserMessageAsCustomer(newMessage, attachmentType == "file" ? attachment : "", attachmentType == "image" ? attachment : "")
+        retrieveAllSellerChats()
+      }
+      if(messageType == "customer messages"){
+        sendUserMessageAsSeller(newMessage, attachmentType == "file" ? attachment : "", attachmentType == "image" ? attachment : "")
+        retrieveAllCustomerChats()
+      }
+      setNewMessage("");
+      setAttachment("");
+    }
+  };
+
+  const handleTagTopic = () => {
+    if(chatTopic.length > 0){
+      if(messageType == "all support chats"){
+        tagSupportChatTopic(chatTopic);
+      }
+    }
+  };
+
+  const sendSupportMessageAsUser = (message: string, fileURL: string, imageURL: string) => {
+    axios.post(GRAPHQL_API, {
+      query: SENDSUPPORTMESSAGE_QUERY(false, ongoingSupportChat.id, message, fileURL, imageURL)
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+    }).catch(err => {
+      console.log("Error while sending support message")
+    })
+  }
+
+  const sendSupportMessageAsStaff = (message: string, fileURL: string, imageURL: string) => {
+    axios.post(GRAPHQL_API, {
+      query: SENDSUPPORTMESSAGE_QUERY(true, selectedSupportChat.id, message, fileURL, imageURL)
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+    }).catch(err => {
+      console.log("Error while sending support message")
+    })
+  }
+
+  const sendUserMessageAsCustomer = (message: string, fileURL: string, imageURL: string) => {
+    axios.post(GRAPHQL_API, {
+      query: SENDUSERMESSAGE_QUERY(false, selectedSellerChat.id, message, fileURL, imageURL)
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+    }).catch(err => {
+      console.log("Error while sending user message")
+    })
+  }
+
+  const sendUserMessageAsSeller = (message: string, fileURL: string, imageURL: string) => {
+    axios.post(GRAPHQL_API, {
+      query: SENDUSERMESSAGE_QUERY(true, selectedCustomerChat.id, message, fileURL, imageURL)
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+    }).catch(err => {
+      console.log("Error while sending user (seller) message")
+    })
+  }
+
+  const tagSupportChatTopic = (topic: string) => {
+    axios.post(GRAPHQL_API, {
+      query: TAGTOPICS_QUERY(selectedSupportChat.id, topic)
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      retrieveAllSupportChats()
+    }).catch(err => {
+      console.log("Error while tagging chat with topic")
+    })
+  }
+
+  const markSupportChatResolved = () => {
+    axios.post(GRAPHQL_API, {
+      query: MARKRESOLVED_QUERY(selectedSupportChat.id)
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      retrieveAllSupportChats()
+    }).catch(err => {
+      console.log("Error while marking chat as resolved")
+    })
+  }
+
+  const retrieveOngoingSupportChat = () => {
+    axios.post(GRAPHQL_API, {
+      query: ONGOINGSUPPORTCHAT_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setOngoingSupportChat(res.data.data.supportChat)
+      if(messageType == "customer service" && res.data.data.supportChat && !res.data.data.supportChat.isResolved){
+        setDisplayInputField(true)
+      }else if (messageType == "customer service"){
+        setDisplayInputField(false)
+      }
+    }).catch(err => {
+      console.log("Error retrieving current support chat")
+    })
+  }
+
+  const retrieveAllSupportChats = () => {
+    axios.post(GRAPHQL_API, {
+      query: ALLSUPPORTCHATS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setSupportChats(res.data.data.supportChats)
+      if(!selectedSupportChat){
+        setSelectedSupportChat(res.data.data.supportChats.length > 0 ? res.data.data.supportChats[0] : {} as SupportChat)
+        setChatTopic(res.data.data.supportChats.length > 0 ? res.data.data.supportChats[0].topicTags : "")
+      }
+    }).catch(err => {
+      console.log("Error retrieving all support chats")
+    })
+  }
+
+  React.useEffect(() => {
+    if(selectedSupportChat && !selectedSupportChat.isResolved){
+      setDisplayInputField(true)
+    }
+    refreshSelectedSupportChat()
+  }, [selectedSupportChat])
+
+  React.useEffect(() => {
+    if(selectedSellerChat  && selectedSellerChat.customer  && selectedSellerChat.seller){
+      setDisplayInputField(true)
+      getLastTransId(selectedSellerChat.customer.id, selectedSellerChat.seller.id)
+    }
+  }, [selectedSellerChat])
+
+  React.useEffect(() => {
+    if(selectedCustomerChat && selectedCustomerChat.customer && selectedCustomerChat.seller){
+      setDisplayInputField(true)
+      getLastTransId(selectedCustomerChat.customer.id, selectedCustomerChat.seller.id)
+    }
+  }, [selectedCustomerChat])
+
+  const retrieveAllSellerChats = () => {
+    axios.post(GRAPHQL_API, {
+      query: SELLERCHATS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setSellerChats(res.data.data.sellerChats)
+      if(!selectedSellerChat){
+        setSelectedSellerChat(res.data.data.sellerChats.length > 0 ? res.data.data.sellerChats[0] : {} as UserChat)
+      }
+      if(sellerChats.length > 0){
+        setDisplayInputField(true)
+      }
+    }).catch(err => {
+      console.log("Error retrieving all seller chats")
+    })
+  }
+
+  const retrieveAllCustomerChats = () => {
+    axios.post(GRAPHQL_API, {
+      query: CUSTOMERCHATS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setCustomerChats(res.data.data.customerChats)
+      if(!selectedCustomerChat){
+        setSelectedCustomerChat(res.data.data.customerChats.length > 0 ? res.data.data.customerChats[0] : {} as UserChat)
+      }
+      if(customerChats.length > 0){
+        setDisplayInputField(true)
+      }
+    }).catch(err => {
+      console.log("Error retrieving all customer chats")
+    })
+  }
+
+  const retrieveAllNotifications = () => {
+    axios.post(GRAPHQL_API, {
+      query: USERNOTIFICATIONS_QUERY
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setCustomerChats(res.data.data.userNotifications)
+    }).catch(err => {
+      console.log("Error retrieving all notifications")
+    })
+  }
+
+  const [ curTransId, setCurTransId ] = React.useState<string>("ORDER ID NOT FOUND")
+
+  const getLastTransId = (userId: string, shopId: string) => {
+    axios.post(GRAPHQL_API, {
+      query: GETLASTTRANSID_QUERY(userId, shopId)
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      setCurTransId(res.data.data.getLastTransId)
+    }).catch(err => {
+      console.log("Error retrieving order id")
+    })
+  }
+
+
+  React.useEffect(() => {
+    if(messageType == "customer service"){
+      retrieveOngoingSupportChat()
+    }else if(messageType == "all support chats"){
+      retrieveAllSupportChats()
+    }else if(messageType == "seller messages"){
+      retrieveAllSellerChats()
+      setDisplayInputField(true)
+    }else if(messageType == "customer messages"){
+      retrieveAllCustomerChats()
+      setDisplayInputField(true)
+    }else if(messageType == "notifications"){
+      retrieveAllNotifications()
+      setDisplayInputField(false)
+    }
+
+  }, [messageType])
+
+
+
+  function revArr(e: any[]) : any[]{
+    var a = e?.slice().reverse();
+    return a;
+  }
+
+  const [ sellerChatsFilter, setSellerChatsFilter ] = React.useState<string>("all time");
+  const [ customerChatsFilter, setCustomerChatsFilter ] = React.useState<string>("all time");
+
+  const handleSellerChatsFilterChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setSellerChatsFilter(event.target.value);
+  }
+
+  const handleCustomerChatsFilterChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setCustomerChatsFilter(event.target.value);
+  }
+
+  //Administration
+  const [ adminType, setAdminType ] = React.useState<string>("users");
+
+  const handleAdminTypeChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setAdminType(event.target.value);
+  }
+
+  React.useEffect(() => {
+
+    if(sellerChatsFilter == "today"){
+      setFSellerChats(sellerChats.filter((e) => {
+        const today = new Date();
+        const createdAtDate = new Date(e.createdAt);
+
+        return (
+          createdAtDate.getDate() === today.getDate() &&
+          createdAtDate.getMonth() === today.getMonth() &&
+          createdAtDate.getFullYear() === today.getFullYear()
+        );
+      }));
+    }else if(sellerChatsFilter == "this month"){
+      setFSellerChats(sellerChats.filter((e) => {
+        const today = new Date();
+        const createdAtDate = new Date(e.createdAt);
+
+        return (
+          createdAtDate.getMonth() === today.getMonth() &&
+          createdAtDate.getFullYear() === today.getFullYear()
+        );
+      }))
+    }else{
+      setFSellerChats(sellerChats)
+    }
+  }, [sellerChatsFilter, sellerChats])
+
+  React.useEffect(() => {
+    if(customerChatsFilter == "today"){
+      setFCustomerChats(customerChats.filter((e) => {
+        const today = new Date();
+        const createdAtDate = new Date(e.createdAt);
+
+        return (
+          createdAtDate.getDate() === today.getDate() &&
+          createdAtDate.getMonth() === today.getMonth() &&
+          createdAtDate.getFullYear() === today.getFullYear()
+        );
+      }));
+    }else if(customerChatsFilter == "this month"){
+      setFCustomerChats(customerChats.filter((e) => {
+        const today = new Date();
+        const createdAtDate = new Date(e.createdAt);
+
+        return (
+          createdAtDate.getMonth() === today.getMonth() &&
+          createdAtDate.getFullYear() === today.getFullYear()
+        );
+      }))
+    }else{
+      setFCustomerChats(customerChats)
+    }
+  }, [customerChatsFilter, customerChats])
+
+  const [ csReviewRating, setCsReviewRating ] = React.useState<number | undefined>();
+  const [ csReviewDescription, setCsReviewDescription ] = React.useState<string>("");
+
+  const handleCsReviewRatingChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setCsReviewRating(event.target.value as number);
+  };
+
+  const handleCsReviewDescriptionChange = (event: React.ChangeEvent<{ value: string }>) => {
+    setCsReviewDescription(event.target.value);
+  };
+
+  const sendCsReview = () => {
+    if(csReviewRating && csReviewRating > 0 && csReviewRating <= 5 && csReviewDescription.length > 0){
+      axios.post(GRAPHQL_API, {
+        query: CREATECSREVIEW_QUERY(csReviewRating as number, csReviewDescription)
+      },
+      {
+        headers: {
+          Authorization: "Bearer " + jwtToken
+        }
+      }
+      ).then(res => {
+        console.log(jwtToken)
+        console.log(res.data)
+        setCsReviewDescription("")
+        setCsReviewRating(undefined)
+        createNewCSChat()
+      }).catch(err => {
+        console.log("Error while sending CS review")
+      })
+    }
+  }
+
+  const createNewCSChat = () => {
+    axios.post(GRAPHQL_API, {
+      query: CREATENEWCSCHAT_QUERY(userId)
+    },
+    {
+      headers: {
+        Authorization: "Bearer " + jwtToken
+      }
+    }
+    ).then(res => {
+      console.log(jwtToken)
+      console.log(res.data)
+      retrieveOngoingSupportChat()
+    }).catch(err => {
+      console.log("Error while creating new CS Chat")
+    })
+  }
+
   return (
     <>
       <Head>
-        <title>Oldegg - Profile</title>
+        <title>Oldegg - Dashboard</title>
         <meta
           name="description"
-          content="Oldegg profile page"
+          content="Oldegg dashboard page"
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -411,6 +1029,9 @@ export default function ProfilePage() {
              <option value="message center">Message Center</option>
              <option value="wishlists">Wishlists</option>
              <option value="OldEgg Credits">OldEgg Credits</option>
+             {role == "ADMIN" &&
+              <option value="Site Administration">Management Dashboard</option>
+             }
       </select>
         <section>
           <div className={styles['lx-container-70']}>
@@ -509,39 +1130,251 @@ export default function ProfilePage() {
 
               {
                 content == 'message center' &&
-                <div className={`${styles['lx-column']} ${styles['column-chat']}`}>
-                  <select name="select-content-message" className={`${styles['select-content-message']}`} onChange={handleMessageTypeChange}>
-                      <option value="customer service" selected>Customer Service</option>
-                      <option value="seller messages">Seller Messages</option>
-                      <option value="notifications">Notifications</option>
+                <div className={`${styles['lx-column']} ${styles['column-creds']}`}>
+                  <select name="select-content" className={`${styles['select-content']}`} defaultValue={role == "ADMIN" ? "all support chats" : "customer service"} onChange={handleMessageTypeChange}>
+                      {role != "ADMIN" && <option value="customer service">Customer Service</option>}
+                      {role != "ADMIN" && <option value="seller messages">Seller Messages</option>}
+                      {role != "ADMIN" && <option value="customer messages">Customer Messages (as Shop)</option>}
+                      {role != "ADMIN" && <option value="notifications">Notifications</option>}
+                      {role == "ADMIN" && <option value="all support chats">Ongoing Support Chats</option>}
                   </select>
+                  <br/>
+                  {messageType == "seller messages" &&
+                  <select name="select-content" className={`${styles['select-content']}`} defaultValue={sellerChatsFilter} onChange={handleSellerChatsFilterChange}>
+                          <option value="all time">All Time</option>
+                          <option value="today">Today</option>
+                          <option value="this month">This Month</option>
+                  </select>
+                  }
+
+                  {messageType == "customer messages" &&
+                  <select name="select-content" className={`${styles['select-content']}`} defaultValue={customerChatsFilter} onChange={handleCustomerChatsFilterChange}>
+                          <option value="all time">All Time</option>
+                          <option value="today">Today</option>
+                          <option value="this month">This Month</option>
+                  </select>
+                  }
+
+                  {messageType == "all support chats" &&
+                  <select name="select-content" className={`${styles['select-content']}`} defaultValue={selectedSupportChat.id} onChange={handleSelectSupportChat}>
+                     {supportChats.map(e => <option value={e.id}>{e.customer.name}</option>)}
+                  </select>
+                  }
+                  {messageType == "seller messages" &&
+                  <select name="select-content" className={`${styles['select-content']}`} defaultValue={selectedSellerChat.id} onChange={handleSelectSellerChat}>
+                     {FsellerChats.map(e => <option value={e.id}>{e.seller.name}</option>)}
+                  </select>
+                  }
+                  {messageType == "customer messages" &&
+                  <select name="select-content" className={`${styles['select-content']}`} defaultValue={selectedCustomerChat.id} onChange={handleSelectCustomerChat}>
+                     {FcustomerChats.map(e => <option value={e.id}>{e.customer.name}</option>)}
+                  </select>
+                  }
+
+                  {messageType == "seller messages" && <p>Order ID: {curTransId}</p>}
+                  {messageType == "customer messages" && <p>Order ID: {curTransId}</p>}
+                  <br/>
+                  <center>
                   <div className={`${styles['chat-box']} ${styles['bs-md']}`}>
                     <h1 className={`${styles['chat-title']}`}>{messageType}</h1>
                     <br/>
-                    <div className={`${styles['cs-chat']}`}>
-                      {csMessages.map(c => c.type == ChatMessageType.INCOMING ?
+                    {messageType == "customer service" && ongoingSupportChat && !ongoingSupportChat?.isResolved &&
+                    <div id="elemchat-cs" className={`${styles['cs-chat']}`}>
+                      {revArr(ongoingSupportChat?.messages)?.map(c => c.isStaffMessage ?
                       <div className={`${styles['chat-set']} ${styles['cs-received']}`}>
-                      <div className={`${styles['receiver-name']}`}>OldEgg Customer Service</div>
-                      <div className={`${styles['received-message']}`}>{c.text}</div>
-                    </div> :
-                    <div className={`${styles['chat-set']} ${styles['cs-sent']}`}>
-                    <div className={`${styles['sender-name']}`}>You</div>
-                    <div className={`${styles['sent-message']}`}>{c.text}</div>
-                  </div>)}
+                        <div>{new Date(c.createdAt).toLocaleString()}</div>
+                        <div className={`${styles['receiver-name']}`}>OldEgg Customer Service</div>
+                        <div className={`${styles['received-message']}`}>{c.text}</div>
+                        <div className={`${styles['attachments']}`}>{c.imageURL.length > 0 ? <img src={c.imageURL}/> : c.fileURL.length > 0 ? <a target="_blank" href={c.fileURL} rel="noopener noreferrer"><button>Download File</button></a> : ""}</div>
+                      </div> :
+                      <div className={`${styles['chat-set']} ${styles['cs-sent']}`}>
+                        <div>{new Date(c.createdAt).toLocaleString()}</div>
+                          <div className={`${styles['sender-name']}`}>You</div>
+                          <div className={`${styles['sent-message']}`}>{c.text}</div>
+                          <div className={`${styles['attachments']}`}>{c.imageURL.length > 0 ? <img src={c.imageURL}/> : c.fileURL.length > 0 ? <a target="_blank" href={c.fileURL} rel="noopener noreferrer"><button>Download File</button></a> : ""}</div>
+                        </div>)}
                     </div>
+                    }
+
+                    {messageType == "all support chats" && selectedSupportChat && !selectedSupportChat?.isResolved &&
+                      <div id="elemchat-cs" className={`${styles['cs-chat']}`}>
+                        {revArr(selectedSupportChat?.messages)?.map((c : SupportMessage) => c.isStaffMessage ?
+                        <div className={`${styles['chat-set']} ${styles['cs-sent']}`}>
+                          <div>{new Date(c.createdAt).toLocaleString()}</div>
+                          <div className={`${styles['sender-name']}`}>You</div>
+                          <div className={`${styles['sent-message']}`}>{c.text}</div>
+                          <div className={`${styles['attachments']}`}>{c.imageURL.length > 0 ? <img src={c.imageURL}/> : c.fileURL.length > 0 ? <a target="_blank" href={c.fileURL} rel="noopener noreferrer"><button>Download File</button></a> : ""}</div>
+                        </div> :
+                        <div className={`${styles['chat-set']} ${styles['cs-received']}`}>
+                          <div>{new Date(c.createdAt).toLocaleString()}</div>
+                            <div className={`${styles['receiver-name']}`}>{selectedSupportChat.customer.name}</div>
+                            <div className={`${styles['received-message']}`}>{c.text}</div>
+                            <div className={`${styles['attachments']}`}>{c.imageURL.length > 0 ? <img src={c.imageURL}/> : c.fileURL.length > 0 ? <a target="_blank" href={c.fileURL} rel="noopener noreferrer"><button>Download File</button></a> : ""}</div>
+                          </div>)}
+                      </div>
+                    }
+
+                    {messageType == "seller messages" && selectedSellerChat &&
+                      <div id="elemchat-cs" className={`${styles['cs-chat']}`}>
+                        {revArr(selectedSellerChat?.messages)?.map((c : UserMessage) => !c.isSellerMessage ?
+                        <div className={`${styles['chat-set']} ${styles['cs-sent']}`}>
+                          <div>{new Date(c.createdAt).toLocaleString()}</div>
+                          <div className={`${styles['sender-name']}`}>You</div>
+                          <div className={`${styles['sent-message']}`}>{c.text}</div>
+                          <div className={`${styles['attachments']}`}>{c.imageURL.length > 0 ? <img src={c.imageURL}/> : c.fileURL.length > 0 ? <a target="_blank" href={c.fileURL} rel="noopener noreferrer"><button>Download File</button></a> : ""}</div>
+                        </div> :
+                        <div className={`${styles['chat-set']} ${styles['cs-received']}`}>
+                          <div>{new Date(c.createdAt).toLocaleString()}</div>
+                            <div className={`${styles['receiver-name']}`}>{selectedSellerChat.seller.name}</div>
+                            <div className={`${styles['received-message']}`}>{c.text}</div>
+                            <div className={`${styles['attachments']}`}>{c.imageURL.length > 0 ? <img src={c.imageURL}/> : c.fileURL.length > 0 ? <a target="_blank" href={c.fileURL} rel="noopener noreferrer"><button>Download File</button></a> : ""}</div>
+                          </div>)}
+                      </div>
+                    }
+
+                    {messageType == "customer messages" && selectedCustomerChat &&
+                      <div id="elemchat-cs" className={`${styles['cs-chat']}`}>
+                        {revArr(selectedCustomerChat?.messages)?.map((c : UserMessage) => c.isSellerMessage ?
+                        <div className={`${styles['chat-set']} ${styles['cs-sent']}`}>
+                          <div>{new Date(c.createdAt).toLocaleString()}</div>
+                          <div className={`${styles['sender-name']}`}>You</div>
+                          <div className={`${styles['sent-message']}`}>{c.text}</div>
+                          <div className={`${styles['attachments']}`}>{c.imageURL.length > 0 ? <img src={c.imageURL}/> : c.fileURL.length > 0 ? <a target="_blank" href={c.fileURL} rel="noopener noreferrer"><button>Download File</button></a> : ""}</div>
+                        </div> :
+                        <div className={`${styles['chat-set']} ${styles['cs-received']}`}>
+                          <div>{new Date(c.createdAt).toLocaleString()}</div>
+                            <div className={`${styles['receiver-name']}`}>{selectedCustomerChat.seller.name}</div>
+                            <div className={`${styles['received-message']}`}>{c.text}</div>
+                            <div className={`${styles['attachments']}`}>{c.imageURL.length > 0 ? <img src={c.imageURL}/> : c.fileURL.length > 0 ? <a target="_blank" href={c.fileURL} rel="noopener noreferrer"><button>Download File</button></a> : ""}</div>
+                          </div>)}
+                      </div>
+                    }
+
+                    {messageType == "customer service" && (!ongoingSupportChat || ongoingSupportChat?.isResolved) &&
+                    <center>
+                      <div>
+                        <h2>{ongoingSupportChat?.isResolved ? "Your last customer support chat has been resolved." : "You do not have any ongoing customer support chat."}</h2>
+                        <br/>
+                        <br/>
+                        <hr/>
+                        <br/>
+                        {ongoingSupportChat?.isResolved ?
+                        <>
+                          <input
+                            type="number"
+                            placeholder="Rate this support chat out of 5"
+                            required
+                            className={` ${textStyles['textinput-modal']} ${textStyles['input']} `}
+                            value={csReviewRating}
+                            min={1}
+                            max={5}
+                            onChange={handleCsReviewRatingChange}
+                          />
+                          <textarea
+                            className={`${styles['send-msg-input']} ${textStyles['textinput-modal']} ${textStyles['input']} `}
+                            value={csReviewDescription}
+                            onChange={handleCsReviewDescriptionChange}
+                            placeholder="Describe your experience with support.."
+                            onResize={e => {}}
+                          />
+                          <button onClick={sendCsReview} className={`${textStyles['button-modal']} ${textStyles['btntrans']}`}>
+                            Submit Review and Reset Chat
+                          </button>
+                        </>
+                        :
+                        <button onClick={createNewCSChat} className={`${textStyles['button-modal']} ${textStyles['btntrans']}`}>
+                          Start a New Chat
+                        </button>
+                        }
+                        <br/>
+                      </div>
+                      <br/>
+                      <br/>
+                    </center>
+                    }
+
+                    {messageType == "all support chats" && (!selectedSupportChat || selectedSupportChat?.isResolved) &&
+                    <center>
+                      <div>
+                        <h2>{selectedSupportChat?.isResolved ? "This user last chat has already been resolved." : "Error occured while retrieving chat with this user."}</h2>
+                        <br/>
+                        <br/>
+                        <hr/>
+                        <br/>
+                        {/* {selectedSupportChat?.isResolved &&
+                        <>
+                        <button onClick={e => {}} className={`${textStyles['button-modal']} ${textStyles['btntrans']}`}>
+                          Delete Last Chat
+                        </button>
+                        <br/>
+                        <button onClick={e => {}} className={`${textStyles['button-modal']} ${textStyles['btntrans']}`}>
+                          Reopen Chat
+                        </button>
+                        </>
+                        } */}
+                        <br/>
+                      </div>
+                      <br/>
+                      <br/>
+                    </center>
+                    }
+
+                    {displayInputField &&
                     <div className={`${styles['input-box']}`}>
                       <textarea
-                        className={`${styles['send-msg-input']}`}
+                        className={`${styles['send-msg-input']} ${textStyles['textinput-modal']} ${textStyles['input']} `}
                         value={newMessage}
                         onChange={handleNewMessageChange}
                         placeholder="Send your message.."
                         onResize={e => {}}
                       />
-                      <button onClick={handleSendMessage} className={`${styles['send-msg-btn']}`}>
+                      <select name="select-content" className={`${styles['select-content']}`} defaultValue={attachmentType} onChange={handleAttachmentTypeChange}>
+                          <option value="none">No attachment</option>
+                          <option value="image">Attach an image</option>
+                          <option value="file">Attach other file</option>
+                      </select>
+                      {attachmentType != "none" &&
+                      <input
+                        type="text"
+                        placeholder={attachmentType == "image" ? "Input Image URL" : "Input File URL"}
+                        required
+                        className={` ${textStyles['textinput-modal']} ${textStyles['input']} `}
+                        value={attachment}
+                        onChange={handleAttachmentChange}
+                      />
+                    }
+                    {messageType == "all support chats" &&
+                    <>
+                    <br/>
+                    <hr/>
+                    <br/>
+                    <input
+                        type="text"
+                        placeholder={"Set Chat Topic"}
+                        required
+                        className={` ${textStyles['textinput-modal']} ${textStyles['input']} `}
+                        value={chatTopic}
+                        onChange={handleChatTopicChange}
+                      />
+                      <button onClick={handleTagTopic} className={`${textStyles['button-modal']} ${textStyles['btntrans']}`}>
+                        Save Topic
+                      </button>
+                      <br/><br/>
+                      <button onClick={markSupportChatResolved} className={`${textStyles['button-modal']} ${textStyles['btntrans']}`}>
+                        Mark as Resolved
+                      </button>
+                      <br/>
+                      <hr/>
+                      <br/><br/>
+                      </>
+                    }
+                      <button onClick={handleSendMessage} className={`${textStyles['button-modal']} ${textStyles['btntrans']}`}>
                         Send
                       </button>
                     </div>
+                  }
                   </div>
+                  </center>
                 </div>
               }
 
@@ -648,6 +1481,31 @@ export default function ProfilePage() {
                   </div>
                   <UpdateWishlistModal key={updatedWishlist.id} id={updatedWishlist.id} oldisprivate={updatedWishlist.type == "PRIVATE"} oldtitle={updatedWishlist.title} show={showUpdateWModal} setShow={setShowUpdateWModal} retrieveWishlists={() => {retrieveWishlists(wishlistType === "my lists" ? USERWISHLISTS_QUERY : (wishlistType === "followed lists") ? FOLLOWEDWISHLISTS_QUERY : PUBLICWISHLISTS_QUERY)}} />
                   <NewWishlistModal show={showCreateWModal} setShow={setShowCreateWModal} retrieveWishlists={() => {retrieveWishlists(wishlistType === "my lists" ? USERWISHLISTS_QUERY : (wishlistType === "followed lists") ? FOLLOWEDWISHLISTS_QUERY : PUBLICWISHLISTS_QUERY)}} />
+                </div>
+              }
+
+              {
+                content == "Site Administration" &&
+                <div className={`${styles['lx-column']} ${styles['column-creds']}`}>
+                  <br/>
+                  <select name="select-content" className={`${styles['select-content']}`} onChange={handleAdminTypeChange}>
+                        <option value="users" selected>Manage Users</option>
+                        <option value="promos">Manage Promotions</option>
+                        <option value="shops">Manage Shops</option>
+                        <option value="vouchers">Manage Vouchers</option>
+                        <option value="reviews">Customer Service Reviews</option>
+                        <option value="newsletter">Send Newsletter</option>
+                        <option value="overview">Business Overview</option>
+                  </select>
+                  <br/>
+                  {adminType == "users" && <AllUsers header={"All OldEgg Users"} users={users} editMode={true} retrieveUsers={retrieveUsers}/>}
+                  {adminType == "promos" && <AllBanners header={"Ongoing Promotional Banners"} banners={banners} editMode={true} retrieveBanners={retrieveBanners}/>}
+                  {adminType == "vouchers" && <AllVouchers header={"All Registered Vouchers"} vouchers={vouchers} editMode={true} retrieveVouchers={retrieveVouchers}/>}
+                  {adminType == "shops" && <AllShops header={"All Registered Shops"} shops={shops} editMode={true} retrieveShops={retrieveShops}/>}
+                  {adminType == "newsletter" && <SendNewsletter emails={emails} retrieveEmails={retrieveEmails}/>}
+                  {adminType == "overview" && <AdminCharts users={users} shops={shops}/>}
+                  {adminType == "reviews" && <AllCSReviews reviews={CSReviews} />}
+
                 </div>
               }
 

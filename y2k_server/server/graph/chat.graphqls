@@ -10,5 +10,6 @@ type Message{
     Content: String!
     User: User! @goField(forceResolver: true)
     Chat: Chat! @goField(forceResolver: true)
-    FileURL: String!
+    FileURL: String
+    ImageURL: String
 }

@@ -10,4 +10,5 @@ export interface Shop{
   user: User
   banner: string
   products: Product[]
+  transactionValue: number
 }

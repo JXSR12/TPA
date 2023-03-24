@@ -13,7 +13,7 @@ import { useSessionStorage } from 'usehooks-ts';
 import { FaCartPlus, FaCopy, FaEdit, FaEye, FaHeart, FaPlusCircle, FaShoppingCart, FaSignInAlt, FaTimesCircle, FaTrash } from 'react-icons/fa';
 import { Client, HydrationProvider } from 'react-hydration-provider';
 import Footer from '@/components/footer';
-import { AddToWishlistModal, NewCommentModal, UpdateWishlistModal } from '@/components/modal';
+import { AddToWishlistModal, CreateProductModal, NewCommentModal, UpdateWishlistModal } from '@/components/modal';
 import { Wishlist, WishlistItem } from '@/interfaces/wishlist';
 import Image from 'next/image';
 import { User } from '@/interfaces/user';
@@ -32,6 +32,8 @@ export default function ShopProducts(this: any){
   const [ showSuccess, setShowSuccess ] = React.useState<boolean>(false);
 
   const [ selProduct, setSelProduct] = React.useState<Product>({} as Product);
+
+  const [ showCreate, setShowCreate ] = React.useState<boolean>(false);
 
   const [ userId, setUserId ] = React.useState<string>("")
 
@@ -68,6 +70,11 @@ const getUser = () => {
     retrieveShop()
     getUser()
   }, [id])
+
+  React.useEffect(() => {
+    retrieveShop()
+    getUser()
+  }, [])
 
   React.useEffect(() => {
     setId(router.query.id as string)
@@ -125,6 +132,13 @@ const getUser = () => {
             <br/>
             <br/>
           </center>
+          {shop?.user?.id == userId &&
+          <div className={`${actionStyles['actions']}`}>
+            <a id="save" className={`${actionStyles['lx-btn']} ${actionStyles['save']}`} onClick={e => setShowCreate(true)}><FaPlusCircle/>&nbsp;&nbsp;Add New Product</a>
+            &nbsp;
+          </div>
+          }
+          <br/>
           <hr/>
           <div>
             <center>
@@ -133,39 +147,22 @@ const getUser = () => {
             <a href={'/shop/' + id + '/about'} className={` ${styles['navlinks']}`}>About Us</a>
             &nbsp;|&nbsp;
             <a href={'/shop/' + id + '/products'} className={` ${styles['navlinks']}`}>Products ({shop?.products?.length})</a>
+            &nbsp;|&nbsp;
+            <a href={'/shop/' + id + '/review'} className={` ${styles['navlinks']}`}>Reviews</a>
             </center>
           </div>
           <hr/>
-          {/* {shop?.user?.id == userId ?
-          <div className={`${actionStyles['actions']}`}>
-            <a id="save" className={`${actionStyles['lx-btn']} ${actionStyles['save']}`} onClick={e => {handleUpdateWishlist()}}><FaEdit/>&nbsp;&nbsp;Edit</a>
-            &nbsp;
-            <a id="delete" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={ev => {deleteWishlist()}}><FaTrash/>&nbsp;&nbsp;Delete</a>
-            &nbsp;
-            <a id="view" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={e => addAllToCart(shop.items)}><FaCartPlus/>&nbsp;&nbsp;Add All to Cart</a>
-          </div>
-          :
-          <div className={`${actionStyles['actions']}`}>
-            {false ?
-              <a id="unfollow" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={ev => {followWishlist(shop.id)}}><FaTimesCircle/>&nbsp;&nbsp;Unfollow</a>
-            :
-              <a id="follow" className={`${actionStyles['lx-btn']} ${actionStyles['save']}`} onClick={e => {followWishlist(shop.id)}}><FaPlusCircle/>&nbsp;&nbsp;Follow</a>
-            }
-            &nbsp;
-            <a id="duplicate" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={e => {duplicateWishlist(shop.title, shop.type, shop.id)}}><FaCopy/>&nbsp;&nbsp;Duplicate</a>
-            &nbsp;
-            <a id="view" className={`${actionStyles['lx-btn']} ${actionStyles['review']}`} onClick={e => addAllToCart(shop.items)}><FaCartPlus/>&nbsp;&nbsp;Add All to Cart</a>
-          </div>
-          } */}
+
           <br/>
         </div>
 
-        <AllShopProducts products={shop?.products}/>
+        <AllShopProducts header='Our Products' products={shop?.products} editMode={shop?.user?.id === userId} retrieveProducts={retrieveShop}/>
 
         <div id={utilStyles['error-snackbar']} className={showError ? utilStyles['show'] : ''}>An error occured while executing the action</div>
         <div id={utilStyles['success-snackbar']} className={showSuccess ? utilStyles['show'] : ''}>Action successfully done</div>
       </div>
       }
+      <CreateProductModal retrieveProducts={retrieveShop} setShow={setShowCreate} show={showCreate} />
 
       <Footer/>
     </>

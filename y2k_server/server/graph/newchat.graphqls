@@ -1,0 +1,72 @@
+type SupportChat{
+    id: ID!
+    createdAt: Time!
+    customer: User! @goField(forceResolver: true)
+    isResolved: Boolean!
+    topicTags: String!
+    messages: [SupportMessage!]! @goField(forceResolver: true)
+}
+
+type UserChat{
+    id: ID!
+    createdAt: Time!
+    seller: Shop! @goField(forceResolver: true)
+    customer: User! @goField(forceResolver: true)
+    messages: [UserMessage!]! @goField(forceResolver: true)
+}
+
+type SupportMessage{
+    id: ID!
+    isStaffMessage: Boolean!
+    createdAt: Time!
+    text: String!
+    fileURL: String
+    imageURL: String
+    chat: SupportChat! @goField(forceResolver: true)
+}
+
+type UserMessage{
+    id: ID!
+    isSellerMessage: Boolean!
+    createdAt: Time!
+    text: String!
+    fileURL: String
+    imageURL: String
+    chat: UserChat! @goField(forceResolver: true)
+}
+
+type Notification{
+    id: ID!
+    createdAt: Time!
+    fromName: String!
+    user: User! @goField(forceResolver: true)
+    text: String!
+    isRead: Boolean!
+}
+
+extend type Query {
+    userNotifications: [Notification!]! @auth
+    shopNotifications: [Notification!]! @auth
+
+    sellerChats: [UserChat!]! @auth 
+    customerChats: [UserChat!]! @auth
+    supportChat: SupportChat! @auth
+    supportChats: [SupportChat!]! @auth
+}
+
+# sellerChats: Get all ongoing chats with all sellers (As a customer)
+# customerChats: Get all ongoing chats with customers (As a shop)
+# supportChat: Get currently ongoing CS chat if any
+# supportChats: Get all ongoing CS chats (As an admin)
+
+extend type Mutation{
+    createUserChat(sellerId: ID!, customerId: ID!): UserChat! @auth
+    createSupportChat(customerId: ID!): SupportChat! @auth
+    createNotification(fromName: String!, userId: ID!, text: String!): Notification! @auth
+
+    addSupportChatTopic(chatId: ID!, topic: String!): SupportChat! @auth
+    markResolved(chatId: ID!): SupportChat! @auth
+
+    sendUserMessage(isSellerMessage: Boolean!, chatId: ID!, text: String!, fileURL: String, imageURL: String): UserMessage! @auth
+    sendSupportMessage(isStaffMessage: Boolean!, chatId: ID!, text: String!, fileURL: String, imageURL: String): SupportMessage! @auth
+}

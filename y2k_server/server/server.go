@@ -14,6 +14,7 @@ import (
 	"github.com/jxsr12/oldegg/graph"
 	"github.com/jxsr12/oldegg/graph/model"
 	middlewares "github.com/jxsr12/oldegg/middleware"
+	ws "github.com/jxsr12/oldegg/websocket"
 	"github.com/rs/cors"
 )
 
@@ -50,8 +51,21 @@ func main() {
 	db.AutoMigrate(&model.ReviewCredit{})
 	db.AutoMigrate(&model.WishlistFollowing{})
 	db.AutoMigrate(&model.WishlistComment{})
-	// db.AutoMigrate(&model.Message{})
-	// db.AutoMigrate(&model.Chat{})
+	db.AutoMigrate(&model.SearchQuery{})
+	db.AutoMigrate(&model.UserSearch{})
+	db.AutoMigrate(&model.PromotionBanner{})
+	db.AutoMigrate(&model.SupportChatReview{})
+	db.AutoMigrate(&model.SupportChat{})
+	db.AutoMigrate(&model.UserChat{})
+	db.AutoMigrate(&model.Notification{})
+	err := db.AutoMigrate(&model.SupportMessage{})
+	if err != nil {
+		log.Println(err)
+	}
+	err = db.AutoMigrate(&model.UserMessage{})
+	if err != nil {
+		log.Println(err)
+	}
 
 	router := mux.NewRouter()
 
@@ -72,8 +86,13 @@ func main() {
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
 
+	pool := ws.NewPool()
+
+	go pool.Start()
+
 	log.Printf("Go to http://localhost:%s/ for GraphQL playground", port)
 	log.Printf("API Endpoint: http://localhost:%s/query", port)
 
 	log.Fatal(http.ListenAndServe(":"+port, router))
+
 }

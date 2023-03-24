@@ -5,8 +5,8 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/gorilla/websocket"
 	"github.com/jxsr12/oldegg/graph/model"
-	"github.com/jxsr12/oldegg/vendor/github.com/gorilla/websocket"
 )
 
 type Client struct {

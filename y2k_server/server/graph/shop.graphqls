@@ -5,18 +5,25 @@ type Shop {
   description: String!
   profilePic: String!
   banner: String!
+  password: String!
 
   user: User! @goField(forceResolver: true)
   products(keyword: String, topSold: Boolean): [Product!]! @goField(forceResolver: true)
+  transactionValue: Float! @goField(forceResolver: true)
 }
 
 extend type Query {
   shop(id: ID, keyword: String): Shop!
   shops: [Shop!]!
+  userShop: Shop! @auth
+  shopReviews(id: ID!): [Review!]!
+  averageRating(id: ID): Float!
+  itemsSold(id: ID): Int!
 }
 
 extend type Mutation {
   createShop(input: NewShop!): Shop! @auth
+  createShopAdmin(input: NewShop!, userID: String!): Shop! @auth
   updateShop(input: NewShop!): Shop! @auth
 }
 
@@ -26,5 +33,6 @@ input NewShop {
   description: String!
   profilePic: String!
   banner: String!
+  password: String
 
 }

@@ -174,7 +174,7 @@ export default function ProductPage(this: any){
       <Navbar/>
       <div>
 
-    {!(item?.shop.user.banned) ?
+    {item && !(item?.shop.user.banned) && !item?.validTo ?
     <>
     <section id="services" className={` ${styles['section']} ${styles['services']} ${styles['section-bg']}`}>
       <div className={` ${styles['container-fluid']}`}>
@@ -304,6 +304,7 @@ export default function ProductPage(this: any){
       </section>
       </>
     :
+    !item?.validTo && item?.name ?
     <div>
       <br/>
       <br/>
@@ -313,6 +314,34 @@ export default function ProductPage(this: any){
       <br/>
       <br/>
       <center>The shop selling this product '{item?.shop.name}' is currently being suspended</center>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <center>
+        <button className={`${ciStyles['button']} ${ciStyles['backhome-cta']}`} onClick={e => Router.push('/')}><b>Go back to Home</b></button>
+      </center>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+    </div>
+    :
+    <div>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <center>This product does not exist</center>
       <br/>
       <br/>
       <br/>

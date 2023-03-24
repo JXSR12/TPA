@@ -339,7 +339,7 @@ const handleUpdateWishlist = () => {
           <div className={`${styles['basket-product']}`} key={i.product.id}>
           <div className={`${styles['item']}`}>
             <div className={`${styles['product-image']}`}>
-              <Image src={i.product.images[0].image} alt="product image" className={`${styles['product-frame']}`} width={150} height={150}/>
+              <img src={i.product.images[0].image} alt="product image" className={`${styles['product-frame']}`} width={150} height={150}/>
             </div>
             <div className={`${styles['product-details']}`}>
               <h1>{i.product.name}</h1>
